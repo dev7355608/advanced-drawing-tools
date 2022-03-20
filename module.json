@@ -3,7 +3,7 @@
   "title": "Advanced Drawing Tools",
   "description": "Improved drawing tools with different line, fill, and text styles.",
   "author": "dev7355608",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "minimumCoreVersion": "9.255",
   "compatibleCoreVersion": "9",
   "esmodules": [
@@ -16,7 +16,7 @@
   ],
   "url": "https://github.com/dev7355608/advanced-drawing-tools",
   "manifest": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/module.json",
-  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v1.0.0.zip",
+  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v1.0.1.zip",
   "bugs": "https://github.com/dev7355608/advanced-drawing-tools/issues",
   "readme": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/README.md"
 }

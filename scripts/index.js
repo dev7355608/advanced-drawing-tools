@@ -1,6 +1,6 @@
 import { MODULE_ID, MODULE_NAME } from "./const.js";
 import { DashLineShader } from "./dash-line-shader.js";
-import { calculateValue } from "./utils.js";
+import { calculateValue, cleanData } from "./utils.js";
 
 import "./config.js";
 import "./hud.js";
@@ -547,9 +547,7 @@ Hooks.once("init", () => {
             }
         }
 
-        console.log(foundry.utils.hasProperty(data, `flags.${MODULE_ID}`), data.type === CONST.DRAWING_TYPES.TEXT, data)
-
-        return data;
+        return foundry.utils.mergeObject({}, cleanData(data, data.type || CONST.DRAWING_TYPES.POLYGON));
     }, "WRAPPER");
 });
 
@@ -625,11 +623,11 @@ Drawing.prototype._convertToPolygon = async function ({ freehand = false, confir
         };
 
         switch (this.data.type) {
-            case CONST.DRAWING_TYPES.RECTANGLE:
             case CONST.DRAWING_TYPES.TEXT:
-                {
-                    update.points = [[0, 0], [width, 0], [width, height], [0, height]];
-                }
+                foundry.utils.setProperty(update, `flags.${MODULE_ID}.textStyle.align`, this.document.getFlag(MODULE_ID, "textStyle.align") || "left");
+                foundry.utils.setProperty(update, `flags.${MODULE_ID}.textStyle.wordWrap`, this.document.getFlag(MODULE_ID, "textStyle.wordWrap") ?? false);
+            case CONST.DRAWING_TYPES.RECTANGLE:
+                update.points = [[0, 0], [width, 0], [width, height], [0, height]];
 
                 break;
             case CONST.DRAWING_TYPES.ELLIPSE:
@@ -692,11 +690,11 @@ Drawing.prototype._convertToPolygon = async function ({ freehand = false, confir
             }
         }
 
-        update = this.constructor.normalizeShape(update);
+        update = cleanData(foundry.utils.mergeObject(this.data, this.constructor.normalizeShape(update), { inplace: false }), update.type);
 
-        return await this.document.update(update, { diff: !update.points });
+        return await this.document.update(update);
     });
-}
+};
 
 class PointHandle extends PIXI.Graphics {
     _hover = false;

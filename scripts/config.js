@@ -1,9 +1,9 @@
 import { MODULE_ID } from "./const.js";
-import { saveValue, stringifyValue } from "./utils.js";
+import { cleanData, saveValue, stringifyValue } from "./utils.js";
 
 Hooks.once("init", () => {
     libWrapper.register(MODULE_ID, "DrawingConfig.prototype._getSubmitData", function (wrapped, ...args) {
-        const data = wrapped(...args);
+        const data = foundry.utils.flattenObject(wrapped(...args));
 
         if (this.form.elements[`${MODULE_ID}.lineStyle.dash`].checked) {
             data[`flags.${MODULE_ID}.lineStyle.dash`] = [
@@ -20,16 +20,18 @@ Hooks.once("init", () => {
 
         processValue(`flags.${MODULE_ID}.fillStyle.texture.width`);
         processValue(`flags.${MODULE_ID}.fillStyle.texture.height`);
-        processValue(`flags.${MODULE_ID}.fillStyle.texture.position.x`);
-        processValue(`flags.${MODULE_ID}.fillStyle.texture.position.y`);
-        processValue(`flags.${MODULE_ID}.fillStyle.texture.pivot.x`);
-        processValue(`flags.${MODULE_ID}.fillStyle.texture.pivot.y`);
+        processValue(`flags.${MODULE_ID}.fillStyle.transform.position.x`);
+        processValue(`flags.${MODULE_ID}.fillStyle.transform.position.y`);
         processValue(`flags.${MODULE_ID}.fillStyle.transform.pivot.x`);
         processValue(`flags.${MODULE_ID}.fillStyle.transform.pivot.y`);
         processValue(`flags.${MODULE_ID}.textStyle.wordWrapWidth`);
         processValue(`flags.${MODULE_ID}.textStyle.lineHeight`);
 
-        return data;
+        if (this.options.configureDefault) {
+            return data;
+        }
+
+        return cleanData(data, data.type || this.object.data.type);
     }, "WRAPPER");
 
     // TODO: Remove once https://gitlab.com/foundrynet/foundryvtt/-/issues/6846 is fixed
