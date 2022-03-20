@@ -748,6 +748,12 @@ class EdgeHandle extends PIXI.Graphics {
 
         this.data = data;
         this.index = index;
+
+        if (index === 0) {
+            this._lineShader = new DashLineShader();
+        } else {
+            this._lineShader = null;
+        }
     }
 
     refresh() {
@@ -773,16 +779,23 @@ class EdgeHandle extends PIXI.Graphics {
             lw = 3;
         }
 
+        if (this._lineShader) {
+            this._lineShader.uniforms.dash = lw * 1.618;
+            this._lineShader.uniforms.gap = lw;
+        }
+
         const cx = (A[0] + B[0]) / 2;
         const cy = (A[1] + B[1]) / 2;
         const w = Math.hypot(A[0] - B[0], A[1] - B[1]);
         const h = lw * (this._hover ? 4 / 3 : 1) * 2;
 
         this.clear()
-            .lineStyle(lw, 0x000000, 1.0)
-            .beginFill(0xFFFFFF, 1.0)
+            .beginFill(0xFFFFFF, 1.0, true)
             .drawRect(-w / 2, -h / 2, w, h)
-            .endFill();
+            .endFill()
+            .lineStyle({ width: lw, color: 0x000000, alpha: 1.0, shader: this._lineShader })
+            .moveTo(-w / 2, -h / 2).lineTo(w / 2, -h / 2)
+            .moveTo(-w / 2, +h / 2).lineTo(w / 2, +h / 2);
         this.position.set(cx, cy);
         this.rotation = Math.atan2(B[1] - A[1], B[0] - A[0]);
         this.visible = true;
