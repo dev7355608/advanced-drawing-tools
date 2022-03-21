@@ -7,13 +7,7 @@ export function parseValue(value) {
 
     let unit;
 
-    if (typeof value === "object") {
-        unit = value.unit || "px";
-        value = value.value;
-    } else if (typeof value === "array") {
-        unit = value[1] || "px";
-        value = value[0];
-    } else if (typeof value === "string") {
+    if (typeof value === "string") {
         value = value.match(/^\s*([+-]?\d*\.?\d+)\s*(px|%)?\s*$/i);
 
         if (!value) {
