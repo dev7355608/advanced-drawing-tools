@@ -105,8 +105,12 @@ Hooks.once("init", () => {
             const ts = this.document.getFlag(MODULE_ID, "textStyle");
             const isText = this.data.type === CONST.DRAWING_TYPES.TEXT;
             const stroke = Math.max(Math.round(this.data.fontSize / 32), 2);
+            const fill = ts?.fill?.length ? [this.data.textColor || "#FFFFFF"].concat(ts.fill) : this.data.textColor || "#FFFFFF";
 
             // Update the text style
+            if (!(Array.isArray(this.text.style.fill) && Array.isArray(fill) && this.text.style.fill.equals(fill))) {
+                this.text.style.fill = fill;
+            }
             Object.assign(this.text.style, {
                 align: ts?.align || (isText ? "left" : "center"),
                 breakWords: ts?.breakWords ?? false,
@@ -116,9 +120,8 @@ Hooks.once("init", () => {
                 dropShadowBlur: ts?.dropShadowBlur ?? Math.max(Math.round(this.data.fontSize / 16), 2),
                 dropShadowColor: ts?.dropShadowColor || "#000000",
                 dropShadowDistance: ts?.dropShadowDistance ?? 0,
-                fill: this.data.textColor || "#FFFFFF",
-                // fillGradientStops: [],
-                // fillGradientType: PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
+                fillGradientStops: ts?.fillGradientStops ?? [],
+                fillGradientType: ts?.fillGradientType ?? PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
                 fontFamily: this.data.fontFamily || CONFIG.defaultFontFamily,
                 fontSize: this.data.fontSize,
                 fontStyle: ts?.fontStyle || "normal",
@@ -210,6 +213,7 @@ Hooks.once("init", () => {
         this.drawing.hitArea = bounds;
         this.alpha = this.data.hidden ? 0.5 : 1.0;
         this.visible = !this.data.hidden || game.user.isGM;
+        return this;
     }, "OVERRIDE");
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._drawRectangle", function () {
