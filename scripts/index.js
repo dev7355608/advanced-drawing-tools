@@ -149,6 +149,11 @@ Hooks.once("init", () => {
             );
             this.text.rotation = this.shape.rotation;
 
+            const measured = PIXI.TextMetrics.measureText(this.text.text || " ", this.text.style, this.text.style.wordWrap, this.text.canvas);
+            const size = Math.ceil(Math.max(measured.width, measured.height, 1) + this.text.style.padding * 2);
+
+            this.text.resolution = Math.min((canvas.performance.textures.maxSize - 0.5) / size, CONFIG.Canvas.maxZoom, 4);
+
             const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
 
             if (arc === 0) {

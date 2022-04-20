@@ -14,6 +14,7 @@
 - Buttons for flipping drawings.
 - Multiline text label support.
 - Newline in text drawings with SHIFT+Enter.
+- Higher text quality.
 
 ![Edit](images/edit.gif)
 
