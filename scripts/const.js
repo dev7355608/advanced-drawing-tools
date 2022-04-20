@@ -26,6 +26,7 @@ DEFAULT_FLAGS[CONST.DRAWING_TYPES.POLYGON] = DEFAULT_FLAGS[CONST.DRAWING_TYPES.F
     [`flags.${MODULE_ID}.textStyle.dropShadowBlur`]: null,
     [`flags.${MODULE_ID}.textStyle.dropShadowColor`]: "#000000",
     [`flags.${MODULE_ID}.textStyle.dropShadowDistance`]: 0,
+    [`flags.${MODULE_ID}.textStyle.arc`]: 0,
     [`flags.${MODULE_ID}.textStyle.fill`]: null,
     [`flags.${MODULE_ID}.textStyle.fillGradientStops`]: null,
     [`flags.${MODULE_ID}.textStyle.fillGradientType`]: 0,

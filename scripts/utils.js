@@ -125,7 +125,7 @@ export function cleanData(data, type) {
             }
         }
 
-        if (value !== defaultValue) {
+        if (value !== defaultValue && value !== null) {
             newData[key] = value;
 
             const split = key.split(".");

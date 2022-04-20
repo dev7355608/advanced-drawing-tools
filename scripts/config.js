@@ -360,6 +360,10 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             </div>
         </div>
         <div class="form-group">
+            <label>Arc <span class="units">(Degrees)</span></label>
+            <input type="number" name="flags.${MODULE_ID}.textStyle.arc" step="0.1" min="-360" max="360" placeholder="0" value="${ts.arc ?? "0"}">
+        </div>
+        <div class="form-group">
             <label>Word Wrap</label>
             <input type="checkbox" name="flags.${MODULE_ID}.textStyle.wordWrap" ${ts.wordWrap || ts.wordWrap == null && !isText ? "checked" : ""}>
         </div>

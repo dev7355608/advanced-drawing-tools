@@ -148,6 +148,33 @@ Hooks.once("init", () => {
                 (this.text.height / 2) + ((this.data.height - this.text.height) / 2)
             );
             this.text.rotation = this.shape.rotation;
+
+            const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
+
+            if (arc === 0) {
+                this._warpedText?.destroy();
+                this._warpedText = null;
+                this.text.renderable = true;
+            } else {
+                if (!this._warpedText || this._warpedText.destroyed) {
+                    this._warpedText = this.addChild(new WarpedText(this.text));
+                    this._warpedText.transform = new SynchronizedTransform(this.text.transform);
+                }
+
+                this._warpedText.arc = arc;
+
+                if (this._warpedText.arc !== 0) {
+                    this._warpedText.visible = true;
+                } else {
+                    this._warpedText.visible = false;
+                    this._warpedText.geometry.dispose();
+                }
+
+                this.text.renderable = !this._warpedText.visible;
+            }
+        } else {
+            this._warpedText?.destroy();
+            this._warpedText = null;
         }
 
         if (this._editMode && this.layer._active && (this.data.type === CONST.DRAWING_TYPES.POLYGON || this.data.type === CONST.DRAWING_TYPES.FREEHAND)) {
@@ -815,5 +842,122 @@ class EdgeHandle extends PIXI.Graphics {
         this.rotation = Math.atan2(B[1] - A[1], B[0] - A[0]);
         this.visible = true;
         this.hitArea = new PIXI.Rectangle(-w / 2 - lw / 2, -h / 2 - lw / 2, w + lw, h + lw);
+    }
+}
+
+class WarpedTextGeometry extends PIXI.PlaneGeometry {
+    arc = 0;
+
+    build() {
+        super.build();
+
+        const arc = this.arc;
+
+        if (arc === 0) {
+            return;
+        }
+
+        const { width, height } = this;
+        const vertices = this.buffers[0].data;
+        const radius = width / arc;
+        const dy = radius * Math.max(Math.cos(arc / 2), 0);
+        const h = arc > 0 ? height : 0;
+
+        for (let i = 0, n = vertices.length; i < n; i += 2) {
+            const a = (vertices[i] / width * 2 - 1) * (arc / 2) - Math.PI / 2;
+            const r = (h - vertices[i + 1]) + radius;
+
+            vertices[i] = Math.cos(a) * r + width / 2;
+            vertices[i + 1] = Math.sin(a) * r + height / 2 + dy;
+        }
+
+        this.buffers[0].update();
+    }
+}
+
+class WarpedText extends PIXI.Mesh {
+    constructor(text) {
+        const geometry = new WarpedTextGeometry(0, 0, 0, 0);
+        const mesh = new PIXI.MeshMaterial(PIXI.Texture.WHITE);
+
+        super(geometry, mesh);
+
+        this.text = text;
+        this.texture = text.texture;
+        this._textureID = -1;
+        this.textureUpdated();
+    }
+
+    set texture(value) {
+        if (this.shader.texture === value) {
+            return;
+        }
+
+        this.shader.texture = value;
+        this._textureID = -1;
+
+        if (value.baseTexture.valid) {
+            this.textureUpdated();
+        }
+        else {
+            value.once("update", this.textureUpdated, this);
+        }
+    }
+
+    get texture() {
+        return this.shader.texture;
+    }
+
+    get arc() {
+        return this.geometry.arc;
+    }
+
+    set arc(value) {
+        if (this.geometry.arc !== value) {
+            this.geometry.arc = value;
+            this._buildGeometry(this.geometry.width, this.geometry.height, this.geometry.arc);
+        }
+    }
+
+    textureUpdated() {
+        this._textureID = this.shader.texture._updateID;
+
+        const geometry = this.geometry;
+        const { width, height } = this.shader.texture;
+
+        if (geometry.width !== width || geometry.height !== height) {
+            this._buildGeometry(width, height, this.geometry.arc);
+        }
+    }
+
+    _buildGeometry(width, height, arc) {
+        const geometry = this.geometry;
+        const radius = width / Math.abs(arc) + height;
+        const step = Math.PI / (4 * Math.sqrt(radius)) * radius;
+
+        geometry.width = width;
+        geometry.height = height;
+        geometry.segWidth = arc !== 0 ? Math.min(Math.ceil((width + height * Math.abs(arc)) / step + 1e-6), 256) : 2;
+        geometry.segHeight = arc !== 0 ? Math.min(Math.ceil(height / step + 1e-6), 256) : 2;
+        geometry.arc = arc;
+        geometry.build();
+    }
+
+    _render(renderer) {
+        this.text.updateText(true);
+
+        if (this._textureID !== this.shader.texture._updateID) {
+            this.textureUpdated();
+        }
+
+        if (this.geometry.width > 0 && this.geometry.height > 0) {
+            super._render(renderer);
+        }
+    }
+
+    destroy(options) {
+        this.shader.texture.off("update", this.textureUpdated, this);
+
+        super.destroy(options);
     }
 }
