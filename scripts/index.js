@@ -19,11 +19,6 @@ Hooks.once("init", () => {
         this._warpedText = null;
 
         if (this.text) {
-            const measured = PIXI.TextMetrics.measureText(this.text.text || " ", this.text.style, this.text.style.wordWrap, this.text.canvas);
-            const size = Math.ceil(Math.max(measured.width, measured.height, 1) + this.text.style.padding * 2);
-
-            this.text.resolution = Math.min((canvas.performance.textures.maxSize - 0.5) / size, CONFIG.Canvas.maxZoom, 4);
-
             const ts = this.document.getFlag(MODULE_ID, "textStyle");
             const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
 
@@ -83,7 +78,11 @@ Hooks.once("init", () => {
         });
 
         // Create the text container
-        return new PreciseText(this.data.text, textStyle);
+        const text = new PreciseText(this.data.text, textStyle);
+
+        text.quality = this.id ? 1.0 : 0.5;
+
+        return text;
     }, "OVERRIDE");
 
     libWrapper.register(MODULE_ID, "Drawing.prototype.refresh", function () {
@@ -846,6 +845,44 @@ class EdgeHandle extends PIXI.Graphics {
         this.hitArea = new PIXI.Rectangle(-w / 2 - lw / 2, -h / 2 - lw / 2, w + lw, h + lw);
     }
 }
+
+PreciseText.prototype._quality = 1;
+
+Object.defineProperties(PreciseText.prototype, {
+    resolution: {
+        get() {
+            return this._resolution;
+        },
+        set(value) { }
+    },
+    quality: {
+        get() {
+            return this._quality;
+        },
+        set(value) {
+            if (this._quality !== value) {
+                this._quality = value;
+                this.dirty = true;
+            }
+        }
+    }
+});
+
+PreciseText.prototype.updateText = function (respectDirty) {
+    const style = this._style;
+
+    if (!respectDirty || this.dirty || this.localStyleID !== style.styleID) {
+        const measured = PIXI.TextMetrics.measureText(this._text || " ", style, style.wordWrap, this.canvas);
+        const size = Math.ceil(Math.max(measured.width, measured.height, 1) + style.padding * 2);
+        const maxSize = canvas.performance.textures.maxSize;
+        const maxZoom = Math.min(CONFIG.Canvas.maxZoom, 4);
+
+        this._resolution = Math.min(Math.max((maxSize / 2 - 1) / size, Math.min((maxSize - 1) / size, 2)), maxZoom) * this._quality;
+        this._resolution *= Math.min((maxSize - 1) / Math.ceil(size * this._resolution), 1);
+    }
+
+    PIXI.Text.prototype.updateText.call(this, respectDirty);
+};
 
 class WarpedTextGeometry extends PIXI.PlaneGeometry {
     arc = 0;
