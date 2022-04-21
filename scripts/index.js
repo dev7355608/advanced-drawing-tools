@@ -13,6 +13,79 @@ Hooks.once("init", () => {
         this.frame.handle.off("mouseup").on("mouseup", this._onHandleMouseUp.bind(this));
     }, "WRAPPER");
 
+    libWrapper.register(MODULE_ID, "Drawing.prototype.draw", async function (wrapped, ...args) {
+        await wrapped(...args);
+
+        this._warpedText = null;
+
+        if (this.text) {
+            const measured = PIXI.TextMetrics.measureText(this.text.text || " ", this.text.style, this.text.style.wordWrap, this.text.canvas);
+            const size = Math.ceil(Math.max(measured.width, measured.height, 1) + this.text.style.padding * 2);
+
+            this.text.resolution = Math.min((canvas.performance.textures.maxSize - 0.5) / size, CONFIG.Canvas.maxZoom, 4);
+
+            const ts = this.document.getFlag(MODULE_ID, "textStyle");
+            const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
+
+            if (arc !== 0) {
+                this._warpedText = this.addChild(new WarpedText(this.text));
+                this._warpedText.transform = new SynchronizedTransform(this.text.transform);
+                this._warpedText.arc = arc;
+
+                this.text.renderable = false;
+            }
+        }
+
+        return this;
+    }, "WRAPPER");
+
+    libWrapper.register(MODULE_ID, "Drawing.prototype._createText", function () {
+        if (this.text && !this.text.destroyed) {
+            this.text.destroy();
+            this.text = null;
+        }
+
+        const ts = this.document.getFlag(MODULE_ID, "textStyle");
+        const isText = this.data.type === CONST.DRAWING_TYPES.TEXT;
+        const stroke = Math.max(Math.round(this.data.fontSize / 32), 2);
+
+        // Define the text style
+        const textStyle = new PIXI.TextStyle({
+            align: ts?.align || (isText ? "left" : "center"),
+            breakWords: ts?.breakWords ?? false,
+            dropShadow: ts?.dropShadow ?? true,
+            dropShadowAlpha: ts?.dropShadowAlpha ?? 1,
+            dropShadowAngle: (ts?.dropShadowAngle ?? 0) / 180 * Math.PI,
+            dropShadowBlur: ts?.dropShadowBlur ?? Math.max(Math.round(this.data.fontSize / 16), 2),
+            dropShadowColor: ts?.dropShadowColor || "#000000",
+            dropShadowDistance: ts?.dropShadowDistance ?? 0,
+            fill: ts?.fill?.length ? [this.data.textColor || "#FFFFFF"].concat(ts.fill) : this.data.textColor || "#FFFFFF",
+            fillGradientStops: ts?.fillGradientStops ?? [],
+            fillGradientType: ts?.fillGradientType ?? PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
+            fontFamily: this.data.fontFamily || CONFIG.defaultFontFamily,
+            fontSize: this.data.fontSize,
+            fontStyle: ts?.fontStyle || "normal",
+            fontVariant: ts?.fontVariant || "normal",
+            fontWeight: ts?.fontWeight || "normal",
+            leading: ts?.leading ?? 0,
+            letterSpacing: ts?.letterSpacing ?? 0,
+            lineHeight: calculateValue(ts?.lineHeight, this.data.fontSize) ?? 0,
+            lineJoin: ts?.lineJoin || "miter",
+            miterLimit: ts?.miterLimit ?? 10,
+            padding: ts?.padding ?? stroke,
+            stroke: ts?.stroke || "#111111",
+            strokeThickness: ts?.strokeThickness ?? stroke,
+            textBaseline: ts?.textBaseline || "alphabetic",
+            trim: ts?.trim ?? false,
+            whiteSpace: ts?.whiteSpace || "pre",
+            wordWrap: ts?.wordWrap ?? !isText,
+            wordWrapWidth: calculateValue(ts?.wordWrapWidth, this.data.width) ?? (1.5 * this.data.width)
+        });
+
+        // Create the text container
+        return new PreciseText(this.data.text, textStyle);
+    }, "OVERRIDE");
+
     libWrapper.register(MODULE_ID, "Drawing.prototype.refresh", function () {
         if (this.destroyed || this.shape.destroyed) return;
         const isTextPreview = (this.data.type === CONST.DRAWING_TYPES.TEXT) && this._controlled;
@@ -102,45 +175,6 @@ Hooks.once("init", () => {
 
         // Update text position and visibility
         if (this.text) {
-            const ts = this.document.getFlag(MODULE_ID, "textStyle");
-            const isText = this.data.type === CONST.DRAWING_TYPES.TEXT;
-            const stroke = Math.max(Math.round(this.data.fontSize / 32), 2);
-            const fill = ts?.fill?.length ? [this.data.textColor || "#FFFFFF"].concat(ts.fill) : this.data.textColor || "#FFFFFF";
-
-            // Update the text style
-            if (!(Array.isArray(this.text.style.fill) && Array.isArray(fill) && this.text.style.fill.equals(fill))) {
-                this.text.style.fill = fill;
-            }
-            Object.assign(this.text.style, {
-                align: ts?.align || (isText ? "left" : "center"),
-                breakWords: ts?.breakWords ?? false,
-                dropShadow: ts?.dropShadow ?? true,
-                dropShadowAlpha: ts?.dropShadowAlpha ?? 1,
-                dropShadowAngle: (ts?.dropShadowAngle ?? 0) / 180 * Math.PI,
-                dropShadowBlur: ts?.dropShadowBlur ?? Math.max(Math.round(this.data.fontSize / 16), 2),
-                dropShadowColor: ts?.dropShadowColor || "#000000",
-                dropShadowDistance: ts?.dropShadowDistance ?? 0,
-                fillGradientStops: ts?.fillGradientStops ?? [],
-                fillGradientType: ts?.fillGradientType ?? PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
-                fontFamily: this.data.fontFamily || CONFIG.defaultFontFamily,
-                fontSize: this.data.fontSize,
-                fontStyle: ts?.fontStyle || "normal",
-                fontVariant: ts?.fontVariant || "normal",
-                fontWeight: ts?.fontWeight || "normal",
-                leading: ts?.leading ?? 0,
-                letterSpacing: ts?.letterSpacing ?? 0,
-                lineHeight: calculateValue(ts?.lineHeight, this.data.fontSize) ?? 0,
-                lineJoin: ts?.lineJoin || "miter",
-                miterLimit: ts?.miterLimit ?? 10,
-                padding: ts?.padding ?? stroke,
-                stroke: ts?.stroke || "#111111",
-                strokeThickness: ts?.strokeThickness ?? stroke,
-                textBaseline: ts?.textBaseline || "alphabetic",
-                trim: ts?.trim ?? false,
-                whiteSpace: ts?.whiteSpace || "pre",
-                wordWrap: ts?.wordWrap ?? !isText,
-                wordWrapWidth: calculateValue(ts?.wordWrapWidth, this.data.width) ?? (1.5 * this.data.width)
-            });
             this.text.alpha = this.data.textAlpha ?? 1.0;
             this.text.pivot.set(this.text.width / 2, this.text.height / 2);
             this.text.position.set(
@@ -148,38 +182,6 @@ Hooks.once("init", () => {
                 (this.text.height / 2) + ((this.data.height - this.text.height) / 2)
             );
             this.text.rotation = this.shape.rotation;
-
-            const measured = PIXI.TextMetrics.measureText(this.text.text || " ", this.text.style, this.text.style.wordWrap, this.text.canvas);
-            const size = Math.ceil(Math.max(measured.width, measured.height, 1) + this.text.style.padding * 2);
-
-            this.text.resolution = Math.min((canvas.performance.textures.maxSize - 0.5) / size, CONFIG.Canvas.maxZoom, 4);
-
-            const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
-
-            if (arc === 0) {
-                this._warpedText?.destroy();
-                this._warpedText = null;
-                this.text.renderable = true;
-            } else {
-                if (!this._warpedText || this._warpedText.destroyed) {
-                    this._warpedText = this.addChild(new WarpedText(this.text));
-                    this._warpedText.transform = new SynchronizedTransform(this.text.transform);
-                }
-
-                this._warpedText.arc = arc;
-
-                if (this._warpedText.arc !== 0) {
-                    this._warpedText.visible = true;
-                } else {
-                    this._warpedText.visible = false;
-                    this._warpedText.geometry.dispose();
-                }
-
-                this.text.renderable = !this._warpedText.visible;
-            }
-        } else {
-            this._warpedText?.destroy();
-            this._warpedText = null;
         }
 
         if (this._editMode && this.layer._active && (this.data.type === CONST.DRAWING_TYPES.POLYGON || this.data.type === CONST.DRAWING_TYPES.FREEHAND)) {
@@ -487,12 +489,6 @@ Hooks.once("init", () => {
             points = points.map(p => [p[0] * scaleX, p[1] * scaleY]);
         }
 
-        // Constrain drawing bounds by the contained text size
-        if (this.data.text) {
-            const textBounds = this.text.getLocalBounds();
-            height = Math.max(textBounds.height + 8, height);
-        }
-
         // Normalize the shape
         return this.constructor.normalizeShape({
             x: original.x,
@@ -505,7 +501,8 @@ Hooks.once("init", () => {
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onUpdate", function (data) {
         // Fully re-draw when texture is changed
-        if ("texture" in data || "text" in data) {
+        if ("type" in data || "texture" in data || "text" in data || "fontFamily" in data || "fontSize" in data || "textColor" in data || "width" in data
+            || "-=flags" in data || "flags" in data && (`-=${MODULE_ID}` in data.flags || MODULE_ID in data.flags && ("textStyle" in data.flags[MODULE_ID] || "-=textStyle" in data.flags[MODULE_ID]))) {
             this.draw().then(() => PlaceableObject.prototype._onUpdate.call(this, data));
         }
         // Otherwise simply refresh the existing drawing
@@ -958,6 +955,12 @@ class WarpedText extends PIXI.Mesh {
         if (this.geometry.width > 0 && this.geometry.height > 0) {
             super._render(renderer);
         }
+    }
+
+    updateTransform() {
+        this.alpha = this.text.alpha;
+
+        super.updateTransform();
     }
 
     destroy(options) {
