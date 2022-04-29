@@ -53,6 +53,8 @@ DEFAULT_FLAGS[CONST.DRAWING_TYPES.RECTANGLE] = DEFAULT_FLAGS[CONST.DRAWING_TYPES
         foundry.utils.mergeObject(
             DEFAULT_FLAGS[CONST.DRAWING_TYPES.POLYGON],
             {
+                [`flags.${MODULE_ID}.lineStyle.-=cap`]: null,
+                [`flags.${MODULE_ID}.lineStyle.-=join`]: null,
                 [`flags.${MODULE_ID}.lineStyle.-=alignment`]: null
             },
             { inplace: false }

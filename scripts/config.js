@@ -95,29 +95,6 @@ Hooks.on("renderDrawingConfig", (app, html) => {
 
     html.find(`input[name="strokeWidth"]`).closest(".form-group").after(`
         <div class="form-group">
-            <label>Line Cap</label>
-            <select name="flags.${MODULE_ID}.lineStyle.cap">
-                <option value="butt" ${ls.cap === "butt" ? "selected" : ""}>Butt</option>
-                <option value="round" ${ls.cap === "round" ? "selected" : ""}>Round</option>
-                <option value="square" ${ls.cap === "square" ? "selected" : ""}>Square</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Line Join</label>
-            <select name="flags.${MODULE_ID}.lineStyle.join">
-                <option value="miter" ${ls.join === "miter" ? "selected" : ""}>Miter</option>
-                <option value="bevel" ${ls.join === "bevel" ? "selected" : ""}>Bevel</option>
-                <option value="round" ${ls.join === "round" ? "selected" : ""}>Round</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Line Alignment</label>
-            <div class="form-fields">
-                <input type="range" name="flags.${MODULE_ID}.lineStyle.alignment" min="0" max="1" step="0.05" value="${ls.alignment ?? "0.5"}">
-                <span class="range-value">${ls.alignment ?? "0.5"}</span>
-            </div>
-        </div>
-        <div class="form-group">
             <label>Dashed <span class="units">(Pixels)</span></label>
             <div class="form-fields">
                 <label>Dash</label>
@@ -129,6 +106,34 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             </div>
         </div>
     `);
+
+    if (configureDefault || document.data.type === CONST.DRAWING_TYPES.POLYGON || document.data.type === CONST.DRAWING_TYPES.FREEHAND) {
+        html.find(`input[name="strokeWidth"]`).closest(".form-group").after(`
+            <div class="form-group">
+                <label>Line Cap</label>
+                <select name="flags.${MODULE_ID}.lineStyle.cap">
+                    <option value="butt" ${ls.cap === "butt" ? "selected" : ""}>Butt</option>
+                    <option value="round" ${ls.cap === "round" ? "selected" : ""}>Round</option>
+                    <option value="square" ${ls.cap === "square" ? "selected" : ""}>Square</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Line Join</label>
+                <select name="flags.${MODULE_ID}.lineStyle.join">
+                    <option value="miter" ${ls.join === "miter" ? "selected" : ""}>Miter</option>
+                    <option value="bevel" ${ls.join === "bevel" ? "selected" : ""}>Bevel</option>
+                    <option value="round" ${ls.join === "round" ? "selected" : ""}>Round</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Line Alignment</label>
+                <div class="form-fields">
+                    <input type="range" name="flags.${MODULE_ID}.lineStyle.alignment" min="0" max="1" step="0.05" value="${ls.alignment ?? "0.5"}">
+                    <span class="range-value">${ls.alignment ?? "0.5"}</span>
+                </div>
+            </div>
+        `);
+    }
 
     html.find(`div[data-tab="fill"]`).append(`
         <div class="form-group">
