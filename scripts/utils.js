@@ -86,7 +86,6 @@ export function cleanData(data, type) {
 
     const defaultFlags = DEFAULT_FLAGS[type];
     const newData = {};
-    let deleteAll = true;
 
     for (const key of Object.keys(defaultFlags).concat(Object.keys(data))) {
         if (!key.startsWith(`flags.${MODULE_ID}.`)) {
@@ -95,7 +94,7 @@ export function cleanData(data, type) {
 
         const split = key.split(".");
 
-        for (let i = 2; i < split.length; i++) {
+        for (let i = 1; i < split.length; i++) {
             newData[`${split.slice(0, i).join(".")}.-=${split[i]}`] = null;
         }
     }
@@ -130,18 +129,36 @@ export function cleanData(data, type) {
 
             const split = key.split(".");
 
-            for (let i = 2; i < split.length; i++) {
+            for (let i = 1; i < split.length; i++) {
                 delete newData[`${split.slice(0, i).join(".")}.-=${split[i]}`];
             }
-
-            deleteAll = false;
         }
     }
 
-    if (deleteAll) {
-        newData[`flags.-=${MODULE_ID}`] = null;
+    for (const key in newData) {
+        if (!key.startsWith(`flags.${MODULE_ID}.`)) {
+            continue;
+        }
+
+        const split = key.split(".");
+
+        if (!split[split.length - 1].startsWith("-=")) {
+            continue;
+        }
+
+        const prefix = `${split.slice(0, split.length - 1).join(".")}.${split[split.length - 1].slice(2)}.`;
+
+        delete newData[prefix.slice(0, prefix.length - 1)];
+
+        for (const otherKey in newData) {
+            if (!otherKey.startsWith(prefix)) {
+                continue;
+            }
+
+            delete newData[otherKey];
+        }
     }
 
     // TODO: Remove once https://gitlab.com/foundrynet/foundryvtt/-/issues/6875 is fixed
-    return Object.fromEntries(Object.entries(newData).sort((a, b) => b[0].length - a[0].length));
+    return foundry.utils.expandObject(Object.fromEntries(Object.entries(newData).sort((a, b) => b[0].length - a[0].length)));
 }

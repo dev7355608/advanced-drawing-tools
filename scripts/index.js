@@ -596,6 +596,10 @@ Hooks.once("init", () => {
     }, "WRAPPER");
 });
 
+Hooks.on("preCreateDrawing", (document, data) => {
+    foundry.utils.mergeObject(data, cleanData(data, data.type));
+});
+
 Drawing.prototype._editMode = false;
 
 Drawing.prototype._toggleEditMode = function (active) {
