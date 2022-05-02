@@ -1,6 +1,28 @@
 import { MODULE_ID } from "./const.js";
 
 Hooks.on("renderDrawingHUD", (hud, html, data) => {
+    const edit = document.createElement("div");
+
+    edit.classList.add("control-icon");
+
+    if (hud.object._editMode) {
+        edit.classList.add("active");
+    }
+
+    edit.setAttribute("title", "Edit");
+    edit.dataset.action = `${MODULE_ID}.edit`;
+    edit.innerHTML = `<i class="fas fa-draw-polygon"></i>`;
+
+    html.find(".col.left").append(edit);
+    html.find(`.control-icon[data-action="${MODULE_ID}.edit"]`).click(async event => {
+        await hud.object._convertToPolygon({ freehand: hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND, confirm: true });
+
+        if (hud.object.data.type === CONST.DRAWING_TYPES.POLYGON || hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND) {
+            hud.object._toggleEditMode();
+            hud.render(true);
+        }
+    });
+
     if (hud.object.data.type === CONST.DRAWING_TYPES.POLYGON || hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND) {
         const flipH = document.createElement("div");
 
@@ -9,7 +31,7 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
         flipH.dataset.action = `${MODULE_ID}.flip-h`;
         flipH.innerHTML = `<i class="fas fa-arrows-alt-h"></i>`;
 
-        html.find(".col.right").append(flipH);
+        html.find(".col.left").append(flipH);
         html.find(`.control-icon[data-action="${MODULE_ID}.flip-h"]`).click(async event => {
             const document = hud.object.document;
             const width = Math.abs(document.data.width);
@@ -29,7 +51,7 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
         flipV.dataset.action = `${MODULE_ID}.flip-v`;
         flipV.innerHTML = `<i class="fas fa-arrows-alt-v"></i>`;
 
-        html.find(".col.right").append(flipV);
+        html.find(".col.left").append(flipV);
         html.find(`.control-icon[data-action="${MODULE_ID}.flip-v"]`).click(async event => {
             const document = hud.object.document;
             const height = Math.abs(document.data.height);
@@ -42,26 +64,4 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
             await document.update({ points });
         });
     }
-
-    const edit = document.createElement("div");
-
-    edit.classList.add("control-icon");
-
-    if (hud.object._editMode) {
-        edit.classList.add("active");
-    }
-
-    edit.setAttribute("title", "Edit");
-    edit.dataset.action = `${MODULE_ID}.edit`;
-    edit.innerHTML = `<i class="fas fa-draw-polygon"></i>`;
-
-    html.find(".col.right").append(edit);
-    html.find(`.control-icon[data-action="${MODULE_ID}.edit"]`).click(async event => {
-        await hud.object._convertToPolygon({ freehand: hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND, confirm: true });
-
-        if (hud.object.data.type === CONST.DRAWING_TYPES.POLYGON || hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND) {
-            hud.object._toggleEditMode();
-            hud.render(true);
-        }
-    });
 });
