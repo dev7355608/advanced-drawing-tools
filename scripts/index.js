@@ -183,7 +183,7 @@ Hooks.once("init", () => {
             this.text.rotation = this.shape.rotation;
         }
 
-        if (this._editMode && this.layer._active && (this.data.type === CONST.DRAWING_TYPES.POLYGON || this.data.type === CONST.DRAWING_TYPES.FREEHAND)) {
+        if (this._editMode && this.layer._active && !this.data.locked && (this.data.type === CONST.DRAWING_TYPES.POLYGON || this.data.type === CONST.DRAWING_TYPES.FREEHAND)) {
             if (!this._editHandles || this._editHandles.destroyed) {
                 this._editHandles = this.shape.addChild(new PIXI.Container());
                 this._editHandles.edges = this._editHandles.addChild(new PIXI.Container());
