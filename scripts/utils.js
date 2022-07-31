@@ -81,21 +81,22 @@ export function saveValue(value) {
     return value;
 }
 
-export function cleanData(data, type) {
+export function cleanData(data, deletionKeys = true) {
     data = foundry.utils.flattenObject(data);
 
-    const defaultFlags = DEFAULT_FLAGS[type];
     const newData = {};
 
-    for (const key of Object.keys(defaultFlags).concat(Object.keys(data))) {
-        if (!key.startsWith(`flags.${MODULE_ID}.`)) {
-            continue;
-        }
+    if (deletionKeys) {
+        for (const key of Object.keys(DEFAULT_FLAGS).concat(Object.keys(data))) {
+            if (!key.startsWith(`flags.${MODULE_ID}.`)) {
+                continue;
+            }
 
-        const split = key.split(".");
+            const split = key.split(".");
 
-        for (let i = 1; i < split.length; i++) {
-            newData[`${split.slice(0, i).join(".")}.-=${split[i]}`] = null;
+            for (let i = 1; i < split.length; i++) {
+                newData[`${split.slice(0, i).join(".")}.-=${split[i]}`] = null;
+            }
         }
     }
 
@@ -106,11 +107,11 @@ export function cleanData(data, type) {
             continue;
         }
 
-        if (!(key in defaultFlags)) {
+        if (!(key in DEFAULT_FLAGS)) {
             continue;
         }
 
-        const defaultValue = defaultFlags[key];
+        const defaultValue = DEFAULT_FLAGS[key];
 
         value = value ?? null;
 
@@ -127,38 +128,41 @@ export function cleanData(data, type) {
         if (value !== defaultValue && value !== null) {
             newData[key] = value;
 
-            const split = key.split(".");
+            if (deletionKeys) {
+                const split = key.split(".");
 
-            for (let i = 1; i < split.length; i++) {
-                delete newData[`${split.slice(0, i).join(".")}.-=${split[i]}`];
+                for (let i = 1; i < split.length; i++) {
+                    delete newData[`${split.slice(0, i).join(".")}.-=${split[i]}`];
+                }
             }
         }
     }
 
-    for (const key in newData) {
-        if (!key.startsWith(`flags.${MODULE_ID}.`)) {
-            continue;
-        }
-
-        const split = key.split(".");
-
-        if (!split[split.length - 1].startsWith("-=")) {
-            continue;
-        }
-
-        const prefix = `${split.slice(0, split.length - 1).join(".")}.${split[split.length - 1].slice(2)}.`;
-
-        delete newData[prefix.slice(0, prefix.length - 1)];
-
-        for (const otherKey in newData) {
-            if (!otherKey.startsWith(prefix)) {
+    if (deletionKeys) {
+        for (const key in newData) {
+            if (!key.startsWith(`flags.${MODULE_ID}.`)) {
                 continue;
             }
 
-            delete newData[otherKey];
+            const split = key.split(".");
+
+            if (!split[split.length - 1].startsWith("-=")) {
+                continue;
+            }
+
+            const prefix = `${split.slice(0, split.length - 1).join(".")}.${split[split.length - 1].slice(2)}.`;
+
+            delete newData[prefix.slice(0, prefix.length - 1)];
+
+            for (const otherKey in newData) {
+                if (!otherKey.startsWith(prefix)) {
+                    continue;
+                }
+
+                delete newData[otherKey];
+            }
         }
     }
 
-    // TODO: Remove once https://gitlab.com/foundrynet/foundryvtt/-/issues/6875 is fixed
     return foundry.utils.expandObject(Object.fromEntries(Object.entries(newData).sort((a, b) => b[0].length - a[0].length)));
 }

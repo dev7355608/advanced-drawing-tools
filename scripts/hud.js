@@ -1,6 +1,6 @@
 import { MODULE_ID, MODULE_NAME } from "./const.js";
 
-Hooks.on("renderDrawingHUD", (hud, html, data) => {
+Hooks.on("renderDrawingHUD", (hud, html) => {
     const edit = document.createElement("div");
 
     edit.classList.add("control-icon");
@@ -17,19 +17,21 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
     html.find(`.control-icon[data-action="${MODULE_ID}.edit"]`).click(async event => {
         await unlockDrawing(hud);
 
-        if (hud.object.data.locked) {
+        const drawing = hud.object;
+
+        if (drawing.document.locked) {
             return;
         }
 
-        await hud.object._convertToPolygon({ freehand: hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND, confirm: true });
+        await drawing._convertToPolygon({ confirm: true });
 
-        if (hud.object.data.type === CONST.DRAWING_TYPES.POLYGON || hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND) {
-            hud.object._toggleEditMode();
+        if (drawing.document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+            drawing._toggleEditMode();
             hud.render(true);
         }
     });
 
-    if (hud.object.data.type === CONST.DRAWING_TYPES.POLYGON || hud.object.data.type === CONST.DRAWING_TYPES.FREEHAND) {
+    if (hud.object.document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
         const flipH = document.createElement("div");
 
         flipH.classList.add("control-icon");
@@ -41,19 +43,19 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
         html.find(`.control-icon[data-action="${MODULE_ID}.flip-h"]`).click(async event => {
             await unlockDrawing(hud);
 
-            if (hud.object.data.locked) {
+            if (hud.object.document.locked) {
                 return;
             }
 
             const document = hud.object.document;
-            const width = Math.abs(document.data.width);
-            const points = foundry.utils.deepClone(document.data.points);
+            const width = Math.abs(document.shape.width);
+            const points = foundry.utils.deepClone(document.shape.points);
 
-            for (const point of points) {
-                point[0] = width - point[0];
+            for (let i = 0; i < points.length; i += 2) {
+                points[i] = width - points[i];
             }
 
-            await document.update({ points });
+            await document.update({ shape: { points } });
         });
 
         const flipV = document.createElement("div");
@@ -67,26 +69,26 @@ Hooks.on("renderDrawingHUD", (hud, html, data) => {
         html.find(`.control-icon[data-action="${MODULE_ID}.flip-v"]`).click(async event => {
             await unlockDrawing(hud);
 
-            if (hud.object.data.locked) {
+            if (hud.object.document.locked) {
                 return;
             }
 
             const document = hud.object.document;
-            const height = Math.abs(document.data.height);
-            const points = foundry.utils.deepClone(document.data.points);
+            const height = Math.abs(document.shape.height);
+            const points = foundry.utils.deepClone(document.shape.points);
 
-            for (const point of points) {
-                point[1] = height - point[1];
+            for (let i = 1; i < points.length; i += 2) {
+                points[i] = height - points[i];
             }
 
-            await document.update({ points });
+            await document.update({ shape: { points } });
         });
     }
 });
 
 async function unlockDrawing(hud) {
     return await new Promise(resolve => {
-        if (hud.object.data.locked) {
+        if (hud.object.document.locked) {
             new Dialog({
                 title: `${MODULE_NAME}: Unlock Drawing`,
                 content: `<p>Unlock this Drawing?</p>`,

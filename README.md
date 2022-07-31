@@ -10,7 +10,7 @@
 ## Feature Overview
 
 - Various additional line, fill, and text style options.
-- Editing of polygons/freehand drawings.
+- Editing of polygon drawings.
   - Left drag node to move it.
   - Left drag edge to create a new node on it.
   - Right click node to delete it.

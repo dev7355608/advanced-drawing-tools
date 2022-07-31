@@ -1,22 +1,37 @@
 {
+  "id": "advanced-drawing-tools",
   "name": "advanced-drawing-tools",
   "title": "Advanced Drawing Tools",
-  "description": "Improved drawing tools with different line, fill, and text styles.",
-  "author": "dev7355608",
-  "version": "1.2.2",
-  "minimumCoreVersion": "9.255",
-  "compatibleCoreVersion": "9",
+  "description": "Improved drawing tools with additional line, fill, and text styles.",
+  "authors": [
+    {
+      "name": "dev7355608",
+      "email": "dev7355608@gmail.com"
+    }
+  ],
+  "version": "2.0.0",
+  "compatibility": {
+    "minimum": "10.276",
+    "verified": "10.276",
+    "maximum": "10"
+  },
+  "minimumCoreVersion": "10",
   "esmodules": [
     "scripts/index.js"
   ],
-  "dependencies": [
-    {
-      "name": "lib-wrapper"
-    }
-  ],
+  "relationships": {
+    "requires": [
+      {
+        "id": "lib-wrapper",
+        "type": "module"
+      }
+    ]
+  },
   "url": "https://github.com/dev7355608/advanced-drawing-tools",
   "manifest": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/module.json",
-  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v1.2.2.zip",
+  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v2.0.0.zip",
+  "changelog": "https://github.com/dev7355608/advanced-drawing-tools/releases/tag/v2.0.0",
   "bugs": "https://github.com/dev7355608/advanced-drawing-tools/issues",
-  "readme": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/README.md"
+  "readme": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/README.md",
+  "license": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/LICENSE"
 }
