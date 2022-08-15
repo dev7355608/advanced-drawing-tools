@@ -9,10 +9,10 @@
       "email": "dev7355608@gmail.com"
     }
   ],
-  "version": "2.0.0",
+  "version": "2.0.1",
   "compatibility": {
     "minimum": "10.276",
-    "verified": "10.276",
+    "verified": "10.277",
     "maximum": "10"
   },
   "minimumCoreVersion": "10",
@@ -29,8 +29,8 @@
   },
   "url": "https://github.com/dev7355608/advanced-drawing-tools",
   "manifest": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/module.json",
-  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v2.0.0.zip",
-  "changelog": "https://github.com/dev7355608/advanced-drawing-tools/releases/tag/v2.0.0",
+  "download": "https://github.com/dev7355608/advanced-drawing-tools/archive/v2.0.1.zip",
+  "changelog": "https://github.com/dev7355608/advanced-drawing-tools/releases/tag/v2.0.1",
   "bugs": "https://github.com/dev7355608/advanced-drawing-tools/issues",
   "readme": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/README.md",
   "license": "https://raw.githubusercontent.com/dev7355608/advanced-drawing-tools/main/LICENSE"

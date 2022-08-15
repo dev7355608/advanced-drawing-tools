@@ -27,13 +27,3 @@ Hooks.once("libWrapper.Ready", () => {
 Hooks.on("preCreateDrawing", (document, data) => {
     foundry.utils.mergeObject(data, cleanData(data), { performDeletions: true });
 });
-
-Hooks.on("updateDrawing", (document, changed) => {
-    if (!document.rendered) {
-        return;
-    }
-
-    if ("-=flags" in changed || "flags" in changed && (`-=${MODULE_ID}` in changed.flags || MODULE_ID in changed.flags)) {
-        document.object.refresh();
-    }
-});
