@@ -3,27 +3,6 @@ import { WarpedText } from "./warped-text.js";
 import { calculateValue } from "./utils.js";
 
 Hooks.once("libWrapper.Ready", () => {
-    libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
-        let { points, width, height } = original.shape;
-        width += dx;
-        height += dy;
-        points = points || [];
-
-        // Rescale polygon points
-        if (this.isPolygon) {
-            const scaleX = 1 + (dx / original.shape.width);
-            const scaleY = 1 + (dy / original.shape.height);
-            points = points.map((p, i) => Math.round(p * (i % 2 ? scaleY : scaleX)));
-        }
-
-        // Normalize the shape
-        return this.constructor.normalizeShape({
-            x: original.x,
-            y: original.y,
-            shape: { width: Math.round(width), height: Math.round(height), points }
-        });
-    }, "OVERRIDE");
-
     libWrapper.register(MODULE_ID, "Drawing.prototype._onDrawingTextKeydown", function (event) {
         // Ignore events when an input is focused, or when ALT or CTRL modifiers are applied
         if (event.altKey || event.ctrlKey || event.metaKey) return;
@@ -60,6 +39,12 @@ Hooks.once("libWrapper.Ready", () => {
         // Typing text (any single char)
         else if (/^.$/.test(event.key)) {
             this._pendingText += event.key;
+            refresh = true;
+        }
+
+        // Pressing Enter
+        else if (event.key === "Enter") {
+            this._pendingText += "\n";
             refresh = true;
         }
 

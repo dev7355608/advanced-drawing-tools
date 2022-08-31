@@ -22,6 +22,27 @@ Hooks.once("libWrapper.Ready", () => {
         else if (size >= 32) return 4;
         return 1;
     }, "OVERRIDE");
+
+    libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
+        let { points, width, height } = original.shape;
+        width += dx;
+        height += dy;
+        points = points || [];
+
+        // Rescale polygon points
+        if (this.isPolygon) {
+            const scaleX = 1 + (dx / original.shape.width);
+            const scaleY = 1 + (dy / original.shape.height);
+            points = points.map((p, i) => p * (i % 2 ? scaleY : scaleX));
+        }
+
+        // Normalize the shape
+        return this.constructor.normalizeShape({
+            x: original.x,
+            y: original.y,
+            shape: { width: Math.roundFast(width), height: Math.roundFast(height), points }
+        });
+    }, "OVERRIDE");
 });
 
 Hooks.on("preCreateDrawing", (document, data) => {
