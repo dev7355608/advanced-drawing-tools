@@ -22,6 +22,7 @@ Hooks.once("libWrapper.Ready", () => {
         else if (size >= 32) return 4;
         return 1;
     }, "OVERRIDE");
+    libWrapper.ignore_conflicts(MODULE_ID, "precise-drawing-tools", "DrawingsLayer.prototype.gridPrecision");
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
         let { points, width, height } = original.shape;

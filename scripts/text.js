@@ -70,7 +70,9 @@ Hooks.once("libWrapper.Ready", () => {
 });
 
 Hooks.on("refreshDrawing", drawing => {
-    if (!drawing.text) {
+    const text = drawing.text;
+
+    if (!text) {
         if (drawing._warpedText) {
             if (!drawing._warpedText.destroyed) {
                 drawing._warpedText.destroy();
@@ -85,7 +87,7 @@ Hooks.on("refreshDrawing", drawing => {
     const document = drawing.document;
     const ts = document.getFlag(MODULE_ID, "textStyle");
 
-    Object.assign(drawing.text.style, {
+    Object.assign(text.style, {
         align: ts?.align || "left",
         dropShadow: ts?.dropShadow ?? true,
         dropShadowAlpha: ts?.dropShadowAlpha ?? 1,
@@ -93,7 +95,7 @@ Hooks.on("refreshDrawing", drawing => {
         dropShadowBlur: ts?.dropShadowBlur ?? Math.max(Math.round(document.fontSize / 16), 2),
         dropShadowColor: ts?.dropShadowColor || "#000000",
         dropShadowDistance: ts?.dropShadowDistance ?? 0,
-        fill: ts?.fill?.length ? [document.textColor || "#FFFFFF"].concat(ts.fill) : document.textColor || "#FFFFFF",
+        fill: ts?.fill?.length ? [document.textColor || "#FFFFFF"].concat(ts.fill.map(c => c || "#FFFFFF")) : document.textColor || "#FFFFFF",
         fillGradientStops: ts?.fillGradientStops ?? [],
         fillGradientType: ts?.fillGradientType ?? PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
         fontStyle: ts?.fontStyle || "normal",
@@ -106,6 +108,18 @@ Hooks.on("refreshDrawing", drawing => {
         strokeThickness: ts?.strokeThickness ?? Math.max(Math.round(document.fontSize / 32), 2),
         wordWrapWidth: calculateValue(ts?.wordWrapWidth, document.shape.width) ?? document.shape.width
     });
+
+    const offset = Math.min(Math.max(document.shape.width - text.width, 0) / 2, document.strokeWidth + document.fontSize / 2);
+
+    if (ts?.align === "left" || ts?.align === "justify") {
+        text.pivot.set(Math.max(text.width, document.shape.width) / 2 - offset, text.height / 2);
+    } else if (ts?.align === "right") {
+        text.pivot.set(text.width - Math.max(text.width, document.shape.width) / 2 + offset, text.height / 2);
+    } else {
+        text.pivot.set(text.width / 2, text.height / 2);
+    }
+
+    text.position.set(document.shape.width / 2, document.shape.height / 2);
 
     const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
 

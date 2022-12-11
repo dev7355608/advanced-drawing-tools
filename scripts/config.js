@@ -86,9 +86,9 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             <label>Texture Size <span class="units">(Pixels or %)</span></label>
             <div class="form-fields">
                 <label>X</label>
-                <input type="text" name="flags.${MODULE_ID}.fillStyle.texture.width" title="Pixels (px) or Percent (%)" pattern="\\s*(\\d*\\.?\\d+)\\s*(px|%)?\\s*" placeholder="Auto" value="${stringifyValue(fs.texture?.width) ?? ""}">
+                <input type="text" name="flags.${MODULE_ID}.fillStyle.texture.width" title="Pixels (px) or Percent (%)" pattern="\\s*(\\d*\\.?\\d+)\\s*(px|%)?\\s*" placeholder="Width" value="${stringifyValue(fs.texture?.width) ?? ""}">
                 <label>Y</label>
-                <input type="text" name="flags.${MODULE_ID}.fillStyle.texture.height" title="Pixels (px) or Percent (%)" pattern="\\s*(\\d*\\.?\\d+)\\s*(px|%)?\\s*" placeholder="Auto" value="${stringifyValue(fs.texture?.height) ?? ""}">
+                <input type="text" name="flags.${MODULE_ID}.fillStyle.texture.height" title="Pixels (px) or Percent (%)" pattern="\\s*(\\d*\\.?\\d+)\\s*(px|%)?\\s*" placeholder="Height" value="${stringifyValue(fs.texture?.height) ?? ""}">
             </div>
         </div>
         <div class="form-group">
@@ -186,7 +186,7 @@ Hooks.on("renderDrawingConfig", (app, html) => {
 
     html.find(`input[name="textColor"]`).closest(".form-fields").append(`
         &nbsp;
-        <input type="number" name="flags.${MODULE_ID}.textStyle.fillGradientStops" min="0" max="1" step="0.001" placeholder="Auto" title="Color Stop" value="${ts?.fillGradientStops?.[0] ?? ""}">
+        <input type="number" name="flags.${MODULE_ID}.textStyle.fillGradientStops" min="0" max="1" step="0.001" placeholder="" title="Color Stop" value="${ts?.fillGradientStops?.[0] ?? ""}">
         &nbsp;
         <a title="Add Color" class="${MODULE_ID}--textStyle-fill--add" style="flex: 0;"><i class="fas fa-plus fa-fw" style="margin: 0;"></i></a>
         <a title="Remove Color" class="${MODULE_ID}--textStyle-fill--remove" style="flex: 0;"><i class="fas fa-minus fa-fw" style="margin: 0;"></i></a>
@@ -200,7 +200,7 @@ Hooks.on("renderDrawingConfig", (app, html) => {
     });
     html.find(`a[class="${MODULE_ID}--textStyle-fill--remove"]`).click(event => {
         html.find(`input[name="textColor"],input[data-edit="textColor"]`).val(
-            html.find(`input[name="flags.${MODULE_ID}.textStyle.fill"]`).eq(0).val() || "#FFFFFF"
+            html.find(`input[name="flags.${MODULE_ID}.textStyle.fill"]`).eq(0).val() || "#ffffff"
         );
         html.find(`input[name="flags.${MODULE_ID}.textStyle.fillGradientStops"]`).eq(0).val(
             html.find(`input[name="flags.${MODULE_ID}.textStyle.fillGradientStops"]`).eq(1).val() ?? ""
@@ -214,10 +214,10 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             <div class="form-group">
                 <label></label>
                 <div class="form-fields">
-                    <input class="color" type="text" name="flags.${MODULE_ID}.textStyle.fill" value="${fill || "#FFFFFF"}">
-                    <input type="color" data-edit="" value="${fill || "#FFFFFF"}">
+                    <input class="color" type="text" name="flags.${MODULE_ID}.textStyle.fill" value="${fill || "#ffffff"}">
+                    <input type="color" data-edit="" value="${fill || "#ffffff"}">
                     &nbsp;
-                    <input type="number" name="flags.${MODULE_ID}.textStyle.fillGradientStops" min="0" max="1" step="0.001" placeholder="Auto" title="Color Stop" value="${stop ?? ""}">
+                    <input type="number" name="flags.${MODULE_ID}.textStyle.fillGradientStops" min="0" max="1" step="0.001" placeholder="" title="Color Stop" value="${stop ?? ""}">
                     &nbsp;
                     <a title="Add Color" style="flex: 0;"><i class="fas fa-plus fa-fw" style="margin: 0;"></i></a>
                     <a title="Remove Color" style="flex: 0;"><i class="fas fa-minus fa-fw" style="margin: 0;"></i></a>
@@ -267,7 +267,8 @@ Hooks.on("renderDrawingConfig", (app, html) => {
         <div class="form-group">
             <label>Text Alignment</label>
             <select name="flags.${MODULE_ID}.textStyle.align">
-                <option value="left" ${ts.align === "left" || ts.align == null ? "selected" : ""}>Left</option>
+                <option value="" ${ts.align == null ? "selected" : ""}>Default</option>
+                <option value="left" ${ts.align === "left" ? "selected" : ""}>Left</option>
                 <option value="center" ${ts.align === "center" ? "selected" : ""}>Center</option>
                 <option value="right" ${ts.align === "right" ? "selected" : ""}>Right</option>
                 <option value="justify" ${ts.align === "justify" ? "selected" : ""}>Justify</option>
@@ -276,13 +277,13 @@ Hooks.on("renderDrawingConfig", (app, html) => {
         <div class="form-group">
             <label>Stroke Color</label>
             <div class="form-fields">
-                <input class="color" type="text" name="flags.${MODULE_ID}.textStyle.stroke" placeholder="Auto" value="${ts.stroke || ""}">
-                <input type="color" value="${ts.stroke || ""}" data-edit="flags.${MODULE_ID}.textStyle.stroke">
+                <input class="color" type="text" name="flags.${MODULE_ID}.textStyle.stroke" placeholder="" value="${ts.stroke || ""}">
+                <input type="color" value="${ts.stroke || "#000000"}" data-edit="flags.${MODULE_ID}.textStyle.stroke">
             </div>
         </div>
         <div class="form-group">
             <label>Stroke Thickness <span class="units">(Pixels)</span></label>
-            <input type="number" name="flags.${MODULE_ID}.textStyle.strokeThickness" min="0" step="0.1" placeholder="Auto" value="${ts.strokeThickness ?? ""}">
+            <input type="number" name="flags.${MODULE_ID}.textStyle.strokeThickness" min="0" step="0.1" placeholder="Default" value="${ts.strokeThickness ?? ""}">
         </div>
         <div class="form-group">
             <label>Drop Shadow</label>
@@ -290,7 +291,7 @@ Hooks.on("renderDrawingConfig", (app, html) => {
         </div>
         <div class="form-group">
             <label>Drop Shadow Blur <span class="units">(Pixels)</span></label>
-            <input type="number" name="flags.${MODULE_ID}.textStyle.dropShadowBlur" min="0" step="0.1" placeholder="Auto" value="${ts.dropShadowBlur ?? ""}">
+            <input type="number" name="flags.${MODULE_ID}.textStyle.dropShadowBlur" min="0" step="0.1" placeholder="Default" value="${ts.dropShadowBlur ?? ""}">
         </div>
         <div class="form-group">
             <label>Drop Shadow Distance <span class="units">(Pixels)</span></label>
@@ -319,6 +320,51 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             <input type="number" name="flags.${MODULE_ID}.textStyle.arc" step="0.1" min="-360" max="360" placeholder="0" value="${ts.arc ?? "0"}">
         </div>
     `);
+
+    const updateStrokeColorPlaceholder = () => {
+        let textColor;
+
+        if (event?.target.type === "color") {
+            textColor = html.find(`input[data-edit="textColor"]`).val();
+        } else {
+            textColor = html.find(`input[name="textColor"]`).val();
+        }
+
+        html.find(`input[name="flags.advanced-drawing-tools.textStyle.stroke"],input[data-edit="flags.advanced-drawing-tools.textStyle.stroke"]`).attr(
+            "placeholder",
+            Color.from(textColor || "#FFFFFF").hsv[2] > 0.6 ? "#000000" : "#FFFFFF"
+        );
+    };
+
+    updateStrokeColorPlaceholder();
+
+    html.find(`input[name="textColor"],input[data-edit="textColor"]`).change(event => updateStrokeColorPlaceholder(event));
+
+    const updateStrokeThicknessPlaceholder = () => {
+        const fontSize = html.find(`input[name="fontSize"]`).val();
+
+        html.find(`input[name="flags.advanced-drawing-tools.textStyle.strokeThickness"]`).attr(
+            "placeholder",
+            Math.max(Math.round(fontSize / 32), 2)
+        );
+    };
+
+    updateStrokeThicknessPlaceholder();
+
+    html.find(`input[name="fontSize"]`).change(event => updateStrokeThicknessPlaceholder(event));
+
+    const updateDropShadowBlurPlaceholder = () => {
+        const fontSize = html.find(`input[name="fontSize"]`).val();
+
+        html.find(`input[name="flags.advanced-drawing-tools.textStyle.dropShadowBlur"]`).attr(
+            "placeholder",
+            Math.max(Math.round(fontSize / 16), 2)
+        );
+    };
+
+    updateDropShadowBlurPlaceholder();
+
+    html.find(`input[name="fontSize"]`).change(event => updateDropShadowBlurPlaceholder(event));
 
     app.options.height = "auto";
     app.position.height = "auto";

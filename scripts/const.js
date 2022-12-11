@@ -13,7 +13,7 @@ export const DEFAULT_FLAGS = Object.freeze({
     [`flags.${MODULE_ID}.fillStyle.transform.skew.x`]: 0,
     [`flags.${MODULE_ID}.fillStyle.transform.skew.y`]: 0,
     [`flags.${MODULE_ID}.lineStyle.dash`]: null,
-    [`flags.${MODULE_ID}.textStyle.align`]: "left",
+    [`flags.${MODULE_ID}.textStyle.align`]: null,
     [`flags.${MODULE_ID}.textStyle.dropShadow`]: true,
     [`flags.${MODULE_ID}.textStyle.dropShadowAlpha`]: 1,
     [`flags.${MODULE_ID}.textStyle.dropShadowAngle`]: 0,

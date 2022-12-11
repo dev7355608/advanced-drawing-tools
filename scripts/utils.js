@@ -140,7 +140,7 @@ export function cleanData(data, deletionKeys = true) {
 
     if (deletionKeys) {
         for (const key in newData) {
-            if (!key.startsWith(`flags.${MODULE_ID}.`)) {
+            if (!key.startsWith(`flags.${MODULE_ID}.`) && !key.startsWith(`flags.-=${MODULE_ID}`)) {
                 continue;
             }
 
