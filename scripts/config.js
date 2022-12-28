@@ -321,7 +321,7 @@ Hooks.on("renderDrawingConfig", (app, html) => {
         </div>
     `);
 
-    const updateStrokeColorPlaceholder = () => {
+    const updateStrokeColorPlaceholder = (event) => {
         let textColor;
 
         if (event?.target.type === "color") {
@@ -330,10 +330,10 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             textColor = html.find(`input[name="textColor"]`).val();
         }
 
-        html.find(`input[name="flags.advanced-drawing-tools.textStyle.stroke"],input[data-edit="flags.advanced-drawing-tools.textStyle.stroke"]`).attr(
-            "placeholder",
-            Color.from(textColor || "#FFFFFF").hsv[2] > 0.6 ? "#000000" : "#FFFFFF"
-        );
+        const strokeColor = Color.from(textColor || "#ffffff").hsv[2] > 0.6 ? "#000000" : "#ffffff";
+
+        html.find(`input[name="flags.advanced-drawing-tools.textStyle.stroke"]`).attr("placeholder", strokeColor);
+        html.find(`input[data-edit="flags.advanced-drawing-tools.textStyle.stroke"]`).val(strokeColor);
     };
 
     updateStrokeColorPlaceholder();

@@ -95,7 +95,7 @@ Hooks.on("refreshDrawing", drawing => {
         dropShadowBlur: ts?.dropShadowBlur ?? Math.max(Math.round(document.fontSize / 16), 2),
         dropShadowColor: ts?.dropShadowColor || "#000000",
         dropShadowDistance: ts?.dropShadowDistance ?? 0,
-        fill: ts?.fill?.length ? [document.textColor || "#FFFFFF"].concat(ts.fill.map(c => c || "#FFFFFF")) : document.textColor || "#FFFFFF",
+        fill: ts?.fill?.length ? [document.textColor || "#ffffff"].concat(ts.fill.map(c => c || "#ffffff")) : document.textColor || "#ffffff",
         fillGradientStops: ts?.fillGradientStops ?? [],
         fillGradientType: ts?.fillGradientType ?? PIXI.TEXT_GRADIENT.LINEAR_VERTICAL,
         fontStyle: ts?.fontStyle || "normal",
@@ -104,7 +104,7 @@ Hooks.on("refreshDrawing", drawing => {
         leading: ts?.leading ?? 0,
         letterSpacing: ts?.letterSpacing ?? 0,
         lineJoin: "round",
-        stroke: ts?.stroke || (Color.from(document.textColor || "#FFFFFF").hsv[2] > 0.6 ? 0x000000 : 0xFFFFFF),
+        stroke: ts?.stroke || (Color.from(document.textColor || "#ffffff").hsv[2] > 0.6 ? 0x000000 : 0xFFFFFF),
         strokeThickness: ts?.strokeThickness ?? Math.max(Math.round(document.fontSize / 32), 2),
         wordWrapWidth: calculateValue(ts?.wordWrapWidth, document.shape.width) ?? document.shape.width
     });
