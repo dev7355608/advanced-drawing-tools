@@ -5,13 +5,15 @@ Hooks.once("libWrapper.Ready", () => {
         wrapped(...args);
 
         this._refreshEditMode();
-    }, "WRAPPER");
+    }, libWrapper.WRAPPER);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype.activateListeners", function (wrapped, ...args) {
         wrapped(...args);
 
-        this.frame.handle.off("mouseup").on("mouseup", this._onHandleMouseUp.bind(this));
-    }, "WRAPPER");
+        const pointerup = isNewerVersion(game.version, 11) ? "pointerup" : "mouseup";
+
+        this.frame.handle.off(pointerup).on(pointerup, this._onHandleMouseUp.bind(this));
+    }, libWrapper.WRAPPER);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleHoverIn", function (event) {
         if (this._dragHandle) {
@@ -26,7 +28,7 @@ Hooks.once("libWrapper.Ready", () => {
         } else if (handle) {
             handle.scale.set(1.5, 1.5);
         }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleHoverOut", function (event) {
         const handle = event.data.handle;
@@ -37,13 +39,13 @@ Hooks.once("libWrapper.Ready", () => {
         } else if (handle) {
             handle.scale.set(1.0, 1.0);
         }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleMouseDown", function (event) {
         if (!this.document.locked) {
             this._dragHandle = true;
         }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragStart", function (event) {
         this._original = this.document.toObject();
@@ -71,7 +73,7 @@ Hooks.once("libWrapper.Ready", () => {
             this.document.updateSource(update);
             this.refresh();
         }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragMove", function (event) {
         const { handle, destination, origin, originalEvent } = event.data;
@@ -110,7 +112,7 @@ Hooks.once("libWrapper.Ready", () => {
             this.document.updateSource(update);
             this.refresh();
         } catch (err) { }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragDrop", function (event) {
         let { handle, destination, origin, originalEvent } = event.data;
@@ -149,7 +151,7 @@ Hooks.once("libWrapper.Ready", () => {
         }
 
         return this.document.update(update, { diff: false });
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onClickRight", function (wrapped, event) {
         const handle = event.data.handle;
@@ -179,7 +181,7 @@ Hooks.once("libWrapper.Ready", () => {
         }
 
         return wrapped(event);
-    }, "MIXED");
+    }, libWrapper.MIXED);
 });
 
 Drawing.prototype._onHandleMouseUp = function (event) {

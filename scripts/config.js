@@ -54,7 +54,7 @@ Hooks.once("libWrapper.Ready", () => {
         processNumberArray(`flags.${MODULE_ID}.textStyle.fillGradientStops`);
 
         return cleanData(data, { deletionKeys: !this.options.configureDefault });
-    }, "WRAPPER");
+    }, libWrapper.WRAPPER);
 });
 
 Hooks.on("renderDrawingConfig", (app, html) => {

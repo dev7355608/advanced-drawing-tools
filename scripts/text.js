@@ -66,7 +66,7 @@ Hooks.once("libWrapper.Ready", () => {
         if (conclude) {
             this.release();
         }
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 });
 
 Hooks.on("refreshDrawing", drawing => {

@@ -21,7 +21,7 @@ Hooks.once("libWrapper.Ready", () => {
         else if (size >= 64) return 8;
         else if (size >= 32) return 4;
         return 1;
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
     libWrapper.ignore_conflicts(MODULE_ID, "precise-drawing-tools", "DrawingsLayer.prototype.gridPrecision");
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
@@ -43,7 +43,7 @@ Hooks.once("libWrapper.Ready", () => {
             y: original.y,
             shape: { width: Math.roundFast(width), height: Math.roundFast(height), points }
         });
-    }, "OVERRIDE");
+    }, libWrapper.OVERRIDE);
 });
 
 function preProcess(data) {
