@@ -81,28 +81,29 @@ export function saveValue(value) {
     return value;
 }
 
-export function cleanData(data, deletionKeys = true) {
-    data = foundry.utils.flattenObject(data);
+export function cleanData(data, { inplace = false, deletionKeys = false, keepOthers = true, partial = false }) {
+    const flatData = foundry.utils.flattenObject(data);
+    let newData = {};
 
-    const newData = {};
-
-    if (deletionKeys) {
-        for (const key of Object.keys(DEFAULT_FLAGS).concat(Object.keys(data))) {
-            if (!key.startsWith(`flags.${MODULE_ID}.`)) {
+    if (deletionKeys || inplace) {
+        for (const key of (partial ? [] : Object.keys(DEFAULT_FLAGS)).concat(Object.keys(flatData))) {
+            if (!(key.startsWith(`flags.${MODULE_ID}.`) && !key.includes(".-="))) {
                 continue;
             }
 
             const split = key.split(".");
 
-            for (let i = 1; i < split.length; i++) {
+            for (let i = partial ? split.length - 1 : 1; i < split.length; i++) {
                 newData[`${split.slice(0, i).join(".")}.-=${split[i]}`] = null;
             }
         }
     }
 
-    for (let [key, value] of Object.entries(data)) {
-        if (!key.startsWith(`flags.${MODULE_ID}.`)) {
-            newData[key] = value;
+    for (let [key, value] of Object.entries(flatData)) {
+        if (!(key.startsWith(`flags.${MODULE_ID}.`) && !key.includes(".-="))) {
+            if (keepOthers && !inplace) {
+                newData[key] = value;
+            }
 
             continue;
         }
@@ -112,33 +113,44 @@ export function cleanData(data, deletionKeys = true) {
         }
 
         const defaultValue = DEFAULT_FLAGS[key];
+        const normalizeValue = value => {
+            value = value ?? null;
 
-        value = value ?? null;
-
-        if (parseValue(defaultValue)) {
-            value = saveValue(value);
-        } else if (typeof value === "string") {
-            if (!value) {
-                value = null;
-            } else {
-                value = value.trim().toLowerCase();
+            if (parseValue(defaultValue)) {
+                value = saveValue(value);
+            } else if (typeof value === "string") {
+                if (!value) {
+                    value = null;
+                } else {
+                    value = value.trim().toLowerCase();
+                }
             }
+
+            return value;
+        };
+
+        if (value instanceof Array) {
+            value = value.map(normalizeValue);
+        } else {
+            value = normalizeValue(value);
         }
 
-        if (value !== defaultValue && value !== null) {
+        if (value != null && value !== defaultValue && !value.equals?.(defaultValue)) {
             newData[key] = value;
 
-            if (deletionKeys) {
+            if (deletionKeys || inplace) {
                 const split = key.split(".");
 
                 for (let i = 1; i < split.length; i++) {
                     delete newData[`${split.slice(0, i).join(".")}.-=${split[i]}`];
                 }
             }
+        } else if (!deletionKeys) {
+            newData[key] = foundry.utils.deepClone(defaultValue);
         }
     }
 
-    if (deletionKeys) {
+    if (deletionKeys || inplace) {
         for (const key in newData) {
             if (!key.startsWith(`flags.${MODULE_ID}.`) && !key.startsWith(`flags.-=${MODULE_ID}`)) {
                 continue;
@@ -164,5 +176,21 @@ export function cleanData(data, deletionKeys = true) {
         }
     }
 
-    return foundry.utils.expandObject(Object.fromEntries(Object.entries(newData).sort((a, b) => b[0].length - a[0].length)));
+    newData = foundry.utils.expandObject(Object.fromEntries(Object.entries(newData).sort((a, b) => b[0].length - a[0].length)));
+
+    if (!inplace) {
+        return newData;
+    }
+
+    foundry.utils.mergeObject(data, newData, { performDeletions: true });
+
+    if (deletionKeys) {
+        foundry.utils.mergeObject(data, newData);
+    }
+
+    if (!keepOthers) {
+        foundry.utils.filterObject(data, foundry.utils.expandObject(DEFAULT_FLAGS));
+    }
+
+    return data;
 }
