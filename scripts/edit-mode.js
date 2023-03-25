@@ -1,11 +1,16 @@
 import { MODULE_ID } from "./const.js";
 
-Hooks.once("libWrapper.Ready", () => {
-    libWrapper.register(MODULE_ID, "Drawing.prototype._refresh", function (wrapped, ...args) {
-        wrapped(...args);
+Hooks.on("refreshDrawing", drawing => {
+    drawing._refreshEditMode();
+});
 
-        this._refreshEditMode();
-    }, libWrapper.WRAPPER);
+Hooks.once("libWrapper.Ready", () => {
+    const getInteractionData = isNewerVersion(game.version, 11)
+        ? (event) => event.interactionData
+        : (event) => event.data;
+    const refreshShape = isNewerVersion(game.version, 11)
+        ? (drawing) => drawing.renderFlags.set({ refreshShape: true })
+        : (drawing) => drawing.refresh();
 
     libWrapper.register(MODULE_ID, "Drawing.prototype.activateListeners", function (wrapped, ...args) {
         wrapped(...args);
@@ -20,7 +25,7 @@ Hooks.once("libWrapper.Ready", () => {
             return;
         }
 
-        const handle = event.data.handle = event.target;
+        const handle = getInteractionData(event).handle = event.target;
 
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
             handle._hover = true;
@@ -31,7 +36,7 @@ Hooks.once("libWrapper.Ready", () => {
     }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleHoverOut", function (event) {
-        const handle = event.data.handle;
+        const handle = getInteractionData(event).handle;
 
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
             handle._hover = false;
@@ -47,10 +52,14 @@ Hooks.once("libWrapper.Ready", () => {
         }
     }, libWrapper.OVERRIDE);
 
-    libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragStart", function (event) {
+    libWrapper.register(MODULE_ID, "Drawing.prototype._onDragLeftStart", function (wrapped, event) {
+        if (!this._dragHandle) {
+            return wrapped(event);
+        }
+
         this._original = this.document.toObject();
 
-        const { handle, destination } = event.data;
+        const { handle, destination } = getInteractionData(event);
         let update;
 
         if (handle instanceof EdgeHandle) {
@@ -66,17 +75,18 @@ Hooks.once("libWrapper.Ready", () => {
             update = { x, y, shape: { width, height, points: Array.from(points) } };
             update.shape.points.splice(handle.index * 2, 0, point.x, point.y);
         } else if (handle instanceof ResizeHandle) {
-            event.data.origin = { x: this.bounds.right, y: this.bounds.bottom };
+            return wrapped(event);
         }
 
         if (update) {
             this.document.updateSource(update);
-            this.refresh();
+            refreshShape(this);
         }
-    }, libWrapper.OVERRIDE);
+    }, libWrapper.MIXED);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragMove", function (event) {
-        const { handle, destination, origin, originalEvent } = event.data;
+        const { handle, destination, origin } = getInteractionData(event);
+        const originalEvent = event.data.originalEvent;
         let update;
 
         // Pan the canvas if the drag event approaches the edge
@@ -110,12 +120,13 @@ Hooks.once("libWrapper.Ready", () => {
 
         try {
             this.document.updateSource(update);
-            this.refresh();
+            refreshShape(this);
         } catch (err) { }
     }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragDrop", function (event) {
-        let { handle, destination, origin, originalEvent } = event.data;
+        let { handle, destination, origin } = getInteractionData(event);
+        const originalEvent = event.data.originalEvent;
         let update;
 
         if (!originalEvent.shiftKey) {
@@ -154,14 +165,14 @@ Hooks.once("libWrapper.Ready", () => {
     }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onClickRight", function (wrapped, event) {
-        const handle = event.data.handle;
+        const handle = getInteractionData(event).handle;
 
         if ((handle instanceof PointHandle || handle instanceof EdgeHandle) && handle._hover) {
             const { x, y, rotation, shape: { width, height, points } } = this.document;
             let update = { x, y, shape: { width, height, points: Array.from(points) } };
 
             if (handle instanceof EdgeHandle) {
-                const origin = event.data.origin;
+                const origin = getInteractionData(event).origin;
                 const matrix = new PIXI.Matrix();
                 const point = new PIXI.Point(origin.x, origin.y);
 
@@ -226,14 +237,23 @@ Drawing.prototype._refreshEditMode = function () {
             editHandles.points = editHandles.addChild(new PIXI.Container());
         }
 
-        const activateListeners = handle => {
-            handle.off("mouseover").off("mouseout").off("mousedown").off("mouseup")
-                .on("mouseover", this._onHandleHoverIn.bind(this))
-                .on("mouseout", this._onHandleHoverOut.bind(this))
-                .on("mousedown", this._onHandleMouseDown.bind(this))
-                .on("mouseup", this._onHandleMouseUp.bind(this));
-            handle.interactive = true;
-        };
+        const activateListeners = isNewerVersion(game.version, 11)
+            ? (handle) => {
+                handle.off("pointerover").off("pointerout").off("pointerdown").off("pointerup")
+                    .on("pointerover", this._onHandleHoverIn.bind(this))
+                    .on("pointerout", this._onHandleHoverOut.bind(this))
+                    .on("pointerdown", this._onHandleMouseDown.bind(this))
+                    .on("pointerup", this._onHandleMouseUp.bind(this));
+                handle.eventMode = "static";
+            }
+            : (handle) => {
+                handle.off("mouseover").off("mouseout").off("mousedown").off("mouseup")
+                    .on("mouseover", this._onHandleHoverIn.bind(this))
+                    .on("mouseout", this._onHandleHoverOut.bind(this))
+                    .on("mousedown", this._onHandleMouseDown.bind(this))
+                    .on("mouseup", this._onHandleMouseUp.bind(this));
+                handle.interactive = true;
+            };
 
         const points = document.shape.points;
 

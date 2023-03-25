@@ -24,26 +24,56 @@ Hooks.once("libWrapper.Ready", () => {
     }, libWrapper.OVERRIDE);
     libWrapper.ignore_conflicts(MODULE_ID, "precise-drawing-tools", "DrawingsLayer.prototype.gridPrecision");
 
-    libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
-        let { points, width, height } = original.shape;
-        width += dx;
-        height += dy;
-        points = points || [];
+    if (!isNewerVersion(game.version, 11)) {
+        libWrapper.register(MODULE_ID, "Drawing.prototype._rescaleDimensions", function (original, dx, dy) {
+            let { points, width, height } = original.shape;
+            width += dx;
+            height += dy;
+            points = points || [];
 
-        // Rescale polygon points
-        if (this.isPolygon) {
-            const scaleX = 1 + (dx / original.shape.width);
-            const scaleY = 1 + (dy / original.shape.height);
-            points = points.map((p, i) => p * (i % 2 ? scaleY : scaleX));
-        }
+            // Rescale polygon points
+            if (this.isPolygon) {
+                const scaleX = 1 + (dx / original.shape.width);
+                const scaleY = 1 + (dy / original.shape.height);
+                points = points.map((p, i) => p * (i % 2 ? scaleY : scaleX));
+            }
 
-        // Normalize the shape
-        return this.constructor.normalizeShape({
-            x: original.x,
-            y: original.y,
-            shape: { width: Math.roundFast(width), height: Math.roundFast(height), points }
-        });
-    }, libWrapper.OVERRIDE);
+            // Normalize the shape
+            return this.constructor.normalizeShape({
+                x: original.x,
+                y: original.y,
+                shape: { width: Math.roundFast(width), height: Math.roundFast(height), points }
+            });
+        }, libWrapper.OVERRIDE);
+    } else {
+        Drawing.prototype._rescaleDimensions = function (original, dx, dy) {
+            let { points, width, height } = original.shape;
+            width += dx;
+            height += dy;
+            points = points || [];
+
+            // Rescale polygon points
+            if (this.isPolygon) {
+                const scaleX = 1 + (dx / original.shape.width);
+                const scaleY = 1 + (dy / original.shape.height);
+                points = points.map((p, i) => p * (i % 2 ? scaleY : scaleX));
+            }
+
+            // Constrain drawing bounds by the contained text size
+            if (this.document.text) {
+                const textBounds = this.text.getLocalBounds();
+                width = Math.max(textBounds.width + 16, width);
+                height = Math.max(textBounds.height + 8, height);
+            }
+
+            // Normalize the shape
+            return this.constructor.normalizeShape({
+                x: original.x,
+                y: original.y,
+                shape: { width: Math.round(width), height: Math.round(height), points }
+            });
+        };
+    }
 });
 
 function preProcess(data) {

@@ -3,6 +3,10 @@ import { WarpedText } from "./warped-text.js";
 import { calculateValue } from "./utils.js";
 
 Hooks.once("libWrapper.Ready", () => {
+    if (isNewerVersion(game.version, 11)) {
+        return;
+    }
+
     libWrapper.register(MODULE_ID, "Drawing.prototype._onDrawingTextKeydown", function (event) {
         // Ignore events when an input is focused, or when ALT or CTRL modifiers are applied
         if (event.altKey || event.ctrlKey || event.metaKey) return;
