@@ -16,7 +16,7 @@ Hooks.on("refreshDrawing", drawing => {
         Object.assign(lineStyle, {
             cap: isSmoothPolygon ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.SQUARE,
             join: isSmoothPolygon ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.MITER,
-            shader: ls?.dash?.[0] && ls?.dash?.[1] ? new PIXI.smooth.DashLineShader({ dash: ls.dash[0] ?? 8, gap: ls.dash[1] ?? 5 }) : null,
+            shader: ls?.dash?.[0] && ls?.dash?.[1] ? getDashLineShader(ls.dash[0] ?? 8, ls.dash[1] ?? 5) : null,
         });
     }
 
@@ -50,3 +50,17 @@ Hooks.on("refreshDrawing", drawing => {
         }
     }
 });
+
+const shaderCache = new Map();
+
+function getDashLineShader(dash, gap) {
+    const key = `${dash}-${gap}`;
+    let shader = shaderCache.get(key);
+
+    if (!shader) {
+        shader = new PIXI.smooth.DashLineShader({ dash, gap });
+        shaderCache.set(key, shader);
+    }
+
+    return shader;
+}
