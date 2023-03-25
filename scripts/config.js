@@ -268,10 +268,9 @@ Hooks.on("renderDrawingConfig", (app, html) => {
             <label>Text Alignment</label>
             <select name="flags.${MODULE_ID}.textStyle.align">
                 <option value="" ${ts.align == null ? "selected" : ""}>Default</option>
-                <option value="left" ${ts.align === "left" ? "selected" : ""}>Left</option>
+                <option value="left" ${ts.align === "left" || ts.align === "justify" ? "selected" : ""}>Left</option>
                 <option value="center" ${ts.align === "center" ? "selected" : ""}>Center</option>
                 <option value="right" ${ts.align === "right" ? "selected" : ""}>Right</option>
-                <option value="justify" ${ts.align === "justify" ? "selected" : ""}>Justify</option>
             </select>
         </div>
         <div class="form-group">
