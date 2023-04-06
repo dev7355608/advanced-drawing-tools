@@ -1,33 +1,17 @@
 export class WarpedText extends PIXI.Mesh {
     constructor(text) {
-        const geometry = new WarpedTextGeometry(0, 0, 0, 0);
-        const mesh = new PIXI.MeshMaterial(PIXI.Texture.WHITE);
+        const geometry = new WarpedTextGeometry(0, 0, 2, 2);
+        const material = new PIXI.MeshMaterial(new PIXI.Texture(text.texture.baseTexture));
 
-        super(geometry, mesh);
+        super(geometry, material);
 
         this.text = text;
-        this.texture = text.texture;
-        this._textureID = -1;
-        this.textureUpdated();
-    }
 
-    set texture(value) {
-        if (this.shader.texture === value) {
-            return;
-        }
-
-        this.shader.texture = value;
-        this._textureID = -1;
-
-        if (value.baseTexture.valid) {
+        if (this.texture.baseTexture.valid) {
             this.textureUpdated();
-        } else {
-            value.once("update", this.textureUpdated, this);
         }
-    }
 
-    get texture() {
-        return this.shader.texture;
+        this.texture.on("update", this.textureUpdated, this);
     }
 
     get arc() {
@@ -41,10 +25,8 @@ export class WarpedText extends PIXI.Mesh {
     }
 
     textureUpdated() {
-        this._textureID = this.shader.texture._updateID;
-
         const geometry = this.geometry;
-        const { width, height } = this.shader.texture;
+        const { width, height } = this.texture;
 
         if (geometry.width !== width || geometry.height !== height) {
             this._buildGeometry(width, height, geometry.arc);
@@ -53,15 +35,16 @@ export class WarpedText extends PIXI.Mesh {
 
     _buildGeometry(width, height, arc) {
         const geometry = this.geometry;
-        const radius = width / Math.abs(arc) + height;
-        const step = Math.PI / (4 * Math.sqrt(radius)) * radius;
 
         geometry.width = width;
         geometry.height = height;
 
         if (width > 0 && height > 0 && arc !== 0) {
-            geometry.segWidth = Math.min(Math.ceil((width + height * Math.abs(arc)) / step + 1e-6), 256);
-            geometry.segHeight = Math.min(Math.ceil(height / step + 1e-6), 256);
+            const radius = width / Math.abs(arc) + height;
+            const step = Math.PI / 4 * Math.sqrt(radius);
+
+            geometry.segWidth = Math.min(Math.max(Math.ceil((width + height * Math.abs(arc)) / step + 1e-6), 2), 512);
+            geometry.segHeight = Math.min(Math.max(Math.ceil(height / step + 1e-6), 2), 128);
         } else {
             geometry.segWidth = geometry.segHeight = 2;
         }
@@ -73,10 +56,6 @@ export class WarpedText extends PIXI.Mesh {
     _render(renderer) {
         this.text.updateText(true);
 
-        if (this._textureID !== this.shader.texture._updateID) {
-            this.textureUpdated();
-        }
-
         if (this.geometry.width > 0 && this.geometry.height > 0) {
             super._render(renderer);
         }
@@ -85,15 +64,28 @@ export class WarpedText extends PIXI.Mesh {
     updateTransform() {
         this.text.updateText(true);
 
-        if (this._textureID !== this.shader.texture._updateID) {
-            this.textureUpdated();
-        }
-
         super.updateTransform();
     }
 
+    getBounds(skipUpdate, rect) {
+        this.text.updateText(true);
+
+        if (this.text._textureID === -1) {
+            skipUpdate = false;
+        }
+
+        return super.getBounds(skipUpdate, rect);
+    }
+
+    getLocalBounds(rect) {
+        this.updateText(true);
+
+        return super.getLocalBounds(this, rect);
+    }
+
+
     destroy(options) {
-        this.shader.texture.off("update", this.textureUpdated, this);
+        this.texture.off("update", this.textureUpdated, this);
 
         super.destroy(options);
     }
