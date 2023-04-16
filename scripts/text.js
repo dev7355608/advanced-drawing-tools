@@ -136,7 +136,7 @@ Hooks.on("refreshDrawing", drawing => {
             drawing._warpedText = drawing.addChildAt(new WarpedText(drawing.text), drawing.getChildIndex(drawing.text) + 1);
         }
 
-        drawing._warpedText.alpha = document.textAlpha ?? 1.0;
+        drawing._warpedText.alpha = document.hidden ? Math.min(0.5, document.textAlpha ?? 1) : (document.textAlpha ?? 1);
         drawing._warpedText.pivot.set(drawing.text.width / 2, drawing.text.height / 2);
         drawing._warpedText.position.set(document.shape.width / 2, document.shape.height / 2);
         drawing._warpedText.angle = document.rotation;
