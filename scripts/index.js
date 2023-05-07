@@ -47,31 +47,7 @@ Hooks.once("libWrapper.Ready", () => {
         }, libWrapper.OVERRIDE);
     } else {
         Drawing.prototype._rescaleDimensions = function (original, dx, dy) {
-            let { points, width, height } = original.shape;
-            width += dx;
-            height += dy;
-            points = points || [];
-
-            // Rescale polygon points
-            if (this.isPolygon) {
-                const scaleX = 1 + (dx / original.shape.width);
-                const scaleY = 1 + (dy / original.shape.height);
-                points = points.map((p, i) => p * (i % 2 ? scaleY : scaleX));
-            }
-
-            // Constrain drawing bounds by the contained text size
-            if (this.document.text) {
-                const textBounds = this.text.getLocalBounds();
-                width = Math.max(textBounds.width + 16, width);
-                height = Math.max(textBounds.height + 8, height);
-            }
-
-            // Normalize the shape
-            return this.constructor.normalizeShape({
-                x: original.x,
-                y: original.y,
-                shape: { width: Math.round(width), height: Math.round(height), points }
-            });
+            return Drawing.rescaleDimensions(original, dx, dy);
         };
     }
 });
