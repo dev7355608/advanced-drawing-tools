@@ -8,6 +8,15 @@ Hooks.once("libWrapper.Ready", () => {
     const getInteractionData = isNewerVersion(game.version, 11)
         ? (event) => event.interactionData
         : (event) => event.data;
+    const getOriginalData = isNewerVersion(game.version, 11)
+        ? (drawing, event) => event.interactionData.originalData
+        : (drawing, event) => drawing._original;
+    const setOriginalData = isNewerVersion(game.version, 11)
+        ? (drawing, event) => event.interactionData.originalData = drawing.document.toObject()
+        : (drawing, event) => drawing._original = drawing.document.toObject();
+    const setRestoreOriginalData = isNewerVersion(game.version, 11)
+        ? (drawing, event, value) => event.interactionData.restoreOriginalData = value
+        : (drawing, event, value) => { };
     const refreshShape = isNewerVersion(game.version, 11)
         ? (drawing) => drawing.renderFlags.set({ refreshShape: true })
         : (drawing) => drawing.refresh();
@@ -25,7 +34,12 @@ Hooks.once("libWrapper.Ready", () => {
             return;
         }
 
-        const handle = getInteractionData(event).handle = event.target;
+        const handle = event.target;
+        const interactionData = getInteractionData(event);
+
+        if (interactionData) {
+            interactionData.handle = handle;
+        }
 
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
             handle._hover = true;
@@ -47,8 +61,21 @@ Hooks.once("libWrapper.Ready", () => {
     }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleMouseDown", function (event) {
-        if (!this.document.locked) {
-            this._dragHandle = true;
+        const handle = event.target;
+
+        if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
+            if (!this.document.locked) {
+                this._dragHandle = true;
+                handle._hover = true;
+                handle.refresh();
+                this._editHandle = handle;
+            } else {
+                this._editHandle = null;
+            }
+        } else {
+            if (!this.document.locked) {
+                this._dragHandle = true;
+            }
         }
     }, libWrapper.OVERRIDE);
 
@@ -57,9 +84,14 @@ Hooks.once("libWrapper.Ready", () => {
             return wrapped(event);
         }
 
-        this._original = this.document.toObject();
+        setOriginalData(this, event);
 
-        const { handle, destination } = getInteractionData(event);
+        let { handle, destination } = getInteractionData(event);
+
+        if (this._editHandle) {
+            handle = this._editHandle;
+        }
+
         let update;
 
         if (handle instanceof EdgeHandle) {
@@ -85,7 +117,12 @@ Hooks.once("libWrapper.Ready", () => {
     }, libWrapper.MIXED);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragMove", function (event) {
-        const { handle, destination, origin } = getInteractionData(event);
+        let { handle, destination, origin } = getInteractionData(event);
+
+        if (this._editHandle) {
+            handle = this._editHandle;
+        }
+
         const originalEvent = event.data.originalEvent;
         let update;
 
@@ -95,7 +132,7 @@ Hooks.once("libWrapper.Ready", () => {
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
             const matrix = new PIXI.Matrix();
             const point = new PIXI.Point(destination.x, destination.y);
-            const { x, y, rotation, shape: { width, height, points } } = this._original;
+            const { x, y, rotation, shape: { width, height, points } } = getOriginalData(this, event);
 
             matrix.translate(-width / 2, -height / 2);
             matrix.rotate(Math.toRadians(rotation || 0));
@@ -115,7 +152,7 @@ Hooks.once("libWrapper.Ready", () => {
             const dx = destination.x - origin.x;
             const dy = destination.y - origin.y;
 
-            update = this._rescaleDimensions(this._original, dx, dy);
+            update = this._rescaleDimensions(getOriginalData(this, event), dx, dy);
         }
 
         try {
@@ -126,17 +163,29 @@ Hooks.once("libWrapper.Ready", () => {
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleDragDrop", function (event) {
         let { handle, destination, origin } = getInteractionData(event);
+
+        if (this._editHandle) {
+            handle = this._editHandle;
+        }
+
         const originalEvent = event.data.originalEvent;
         let update;
+
+        setRestoreOriginalData(this, event, false);
 
         if (!originalEvent.shiftKey) {
             destination = canvas.grid.getSnappedPosition(destination.x, destination.y, this.layer.gridPrecision);
         }
 
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
+            this._dragHandle = false;
+            handle._hover = false;
+            handle.refresh();
+            this._editHandle = null;
+
             const matrix = new PIXI.Matrix();
             const point = new PIXI.Point(destination.x, destination.y);
-            const { x, y, rotation, shape: { width, height, points } } = this._original;
+            const { x, y, rotation, shape: { width, height, points } } = getOriginalData(this, event);
 
             matrix.translate(-width / 2, -height / 2);
             matrix.rotate(Math.toRadians(rotation || 0));
@@ -158,16 +207,25 @@ Hooks.once("libWrapper.Ready", () => {
             const dx = destination.x - origin.x;
             const dy = destination.y - origin.y;
 
-            update = this._rescaleDimensions(this._original, dx, dy);
+            update = this._rescaleDimensions(getOriginalData(this, event), dx, dy);
         }
 
         return this.document.update(update, { diff: false });
     }, libWrapper.OVERRIDE);
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onClickRight", function (wrapped, event) {
-        const handle = getInteractionData(event).handle;
+        let handle = getInteractionData(event).handle;
+
+        if (this._editHandle) {
+            handle = this._editHandle;
+        }
 
         if ((handle instanceof PointHandle || handle instanceof EdgeHandle) && handle._hover) {
+            this._dragHandle = false;
+            handle._hover = false;
+            handle.refresh();
+            this._editHandle = null;
+
             const { x, y, rotation, shape: { width, height, points } } = this.document;
             let update = { x, y, shape: { width, height, points: Array.from(points) } };
 
@@ -193,13 +251,14 @@ Hooks.once("libWrapper.Ready", () => {
 
         return wrapped(event);
     }, libWrapper.MIXED);
-});
 
-Drawing.prototype._onHandleMouseUp = function (event) {
-    if (!this._original) {
-        this._dragHandle = false;
-    }
-};
+    Drawing.prototype._onHandleMouseUp = function (event) {
+        if (!getOriginalData(this, event)) {
+            this._dragHandle = false;
+            this._editHandle = null;
+        }
+    };
+});
 
 Drawing.prototype._editMode = false;
 
@@ -228,7 +287,7 @@ Drawing.prototype._editHandles = null;
 Drawing.prototype._refreshEditMode = function () {
     const document = this.document;
 
-    if (this._editMode && this.layer.active && !document.locked && document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+    if (this._editMode && this.layer.active && !document._source.locked && document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
         let editHandles = this._editHandles;
 
         if (!editHandles || editHandles.destroyed) {
@@ -293,6 +352,8 @@ class PointHandle extends PIXI.Graphics {
 
         this.object = object;
         this.index = index;
+        this.cursor = "pointer";
+        this.eventMode = "static";
     }
 
     refresh() {
@@ -345,6 +406,9 @@ class EdgeHandle extends PIXI.Graphics {
         } else {
             this._lineShader = null;
         }
+
+        this.cursor = "pointer";
+        this.eventMode = "static";
     }
 
     refresh() {

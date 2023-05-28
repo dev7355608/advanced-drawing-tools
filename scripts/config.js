@@ -53,7 +53,7 @@ Hooks.once("libWrapper.Ready", () => {
         processStringArray(`flags.${MODULE_ID}.textStyle.fill`);
         processNumberArray(`flags.${MODULE_ID}.textStyle.fillGradientStops`);
 
-        return cleanData(data, { deletionKeys: !this.options.configureDefault });
+        return foundry.utils.flattenObject(cleanData(data, { deletionKeys: !this.options.configureDefault }));
     }, libWrapper.WRAPPER);
 });
 
