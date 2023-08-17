@@ -69,3 +69,18 @@ Hooks.on("preCreateDrawing", (document) => {
 Hooks.on("preUpdateDrawing", (document, data) => {
     cleanData(preProcess(data), { inplace: true, deletionKeys: true, partial: true });
 });
+
+Hooks.once("init", () => {
+    if (isNewerVersion(game.version, 11)) {
+        Hooks.on("updateDrawing", (document, changes) => {
+            if (!document.rendered) {
+                return;
+            }
+
+            if (changes.flags && (changes.flags[MODULE_ID] !== undefined
+                || changes.flags[`-=${MODULE_ID}`] !== undefined)) {
+                document.object.refresh();
+            }
+        });
+    }
+});
