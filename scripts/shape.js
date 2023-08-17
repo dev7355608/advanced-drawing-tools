@@ -7,6 +7,11 @@ Hooks.on("refreshDrawing", drawing => {
     }
 
     const document = drawing.document;
+
+    if (document.getFlag(MODULE_ID, "invisible") && !(drawing.layer.active && (game.user.isGM || game.user === document.author))) {
+        drawing.shape.visible = false;
+    }
+
     const { lineStyle, fillStyle } = drawing.shape.geometry?.graphicsData?.[0] ?? {};
 
     if (lineStyle && document.strokeWidth) {

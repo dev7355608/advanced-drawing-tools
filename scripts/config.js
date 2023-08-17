@@ -63,6 +63,16 @@ Hooks.on("renderDrawingConfig", (app, html) => {
     const fs = document.getFlag(MODULE_ID, "fillStyle") ?? {};
     const ts = document.getFlag(MODULE_ID, "textStyle") ?? {};
 
+    html.find(`.tab[data-tab="position"]`).append(`
+        <div class="form-group">
+            <label>Invisible</label>
+            <div class="form-fields">
+                <input type="checkbox" name="flags.${MODULE_ID}.invisible" ${document.getFlag(MODULE_ID, "invisible") ? "checked" : ""}>
+            </div>
+            <p class="notes">Invisible drawings are visible to their authors and GMs if the drawings layer is active. Otherwise they are not visible to anyone.</p>
+        </div>
+    `);
+
     html.find(`input[name="text"]`).replaceWith(`
         <textarea name="text" style="font-family: var(--font-primary); min-height: calc(var(--form-field-height) + 3px); height: 0; border-color: var(--color-border-light-tertiary);">${document.text ?? ""}</textarea>
     `);

@@ -1,6 +1,7 @@
 export const MODULE_ID = "advanced-drawing-tools";
 export const MODULE_NAME = "Advanced Drawing Tools";
 export const DEFAULT_FLAGS = Object.freeze({
+    [`flags.${MODULE_ID}.invisible`]: false,
     [`flags.${MODULE_ID}.fillStyle.texture.height`]: null,
     [`flags.${MODULE_ID}.fillStyle.texture.width`]: null,
     [`flags.${MODULE_ID}.fillStyle.transform.pivot.x`]: 0,
