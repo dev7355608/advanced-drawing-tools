@@ -19,6 +19,7 @@
 - Multiline text label support.
 - Newline in text drawings with SHIFT+Enter.
 - Higher text quality.
+- Invisible drawings: Invisible drawings are visible to their authors and GMs if the drawings layer is active. Otherwise they are not visible to anyone.
 
 ![Edit](images/edit.gif)
 
