@@ -9,6 +9,7 @@ Hooks.on("refreshDrawing", drawing => {
     const document = drawing.document;
 
     if (document.getFlag(MODULE_ID, "invisible") && !(drawing.layer.active && (game.user.isGM || game.user === document.author))) {
+        drawing.visible = false;
         drawing.shape.visible = false;
     }
 
@@ -16,7 +17,7 @@ Hooks.on("refreshDrawing", drawing => {
 
     if (lineStyle && document.strokeWidth) {
         const ls = document.getFlag(MODULE_ID, "lineStyle");
-        const isSmoothPolygon = document.shape.type === CONST.DRAWING_TYPES.POLYGON && document.bezierFactor > 0;
+        const isSmoothPolygon = document.shape.type === "p" && document.bezierFactor > 0;
 
         Object.assign(lineStyle, {
             cap: isSmoothPolygon ? PIXI.LINE_CAP.ROUND : PIXI.LINE_CAP.SQUARE,

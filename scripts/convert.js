@@ -1,7 +1,7 @@
 import { MODULE_NAME } from "./const.js";
 
 Drawing.prototype._convertToPolygon = async function ({ confirm = false } = {}) {
-    if (this.document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+    if (this.document.shape.type === "p") {
         return;
     }
 
@@ -17,11 +17,11 @@ Drawing.prototype._convertToPolygon = async function ({ confirm = false } = {}) 
         this.document.reset();
 
         const { x, y, shape: { width, height, type } } = this.document;
-        let update = { x, y, shape: { width, height, type: CONST.DRAWING_TYPES.POLYGON } };
+        let update = { x, y, shape: { width, height, type: "p" } };
 
-        if (type === CONST.DRAWING_TYPES.RECTANGLE) {
+        if (type === "r") {
             update.shape.points = [0, 0, width, 0, width, height, 0, height];
-        } else if (type === CONST.DRAWING_TYPES.ELLIPSE) {
+        } else if (type === "e") {
             const rx = width / 2;
             const ry = height / 2;
 
@@ -84,14 +84,16 @@ Drawing.prototype._convertToPolygon = async function ({ confirm = false } = {}) 
             return;
         }
 
-        this.document.shape.type = CONST.DRAWING_TYPES.POLYGON;
+        this.document.shape.type = "p";
         update = this._rescaleDimensions(update, 0, 0);
-        update.shape.type = CONST.DRAWING_TYPES.POLYGON;
+        update.shape.type = "p";
 
         if (this.document.fillType === CONST.DRAWING_FILL_TYPES.NONE) {
             update.fillType = CONST.DRAWING_FILL_TYPES.SOLID;
             update.fillAlpha = 0;
         }
+
+        update.bezierFactor = 0;
 
         await this.document.update(update);
     });

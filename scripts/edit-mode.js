@@ -5,29 +5,36 @@ Hooks.on("refreshDrawing", drawing => {
 });
 
 Hooks.once("libWrapper.Ready", () => {
-    const getInteractionData = isNewerVersion(game.version, 11)
+    const getInteractionData = foundry.utils.isNewerVersion(game.version, 11)
         ? (event) => event.interactionData
         : (event) => event.data;
-    const getOriginalData = isNewerVersion(game.version, 11)
+    const getOriginalData = foundry.utils.isNewerVersion(game.version, 11)
         ? (drawing, event) => event.interactionData.originalData
         : (drawing, event) => drawing._original;
-    const setOriginalData = isNewerVersion(game.version, 11)
+    const setOriginalData = foundry.utils.isNewerVersion(game.version, 11)
         ? (drawing, event) => event.interactionData.originalData = drawing.document.toObject()
         : (drawing, event) => drawing._original = drawing.document.toObject();
-    const setRestoreOriginalData = isNewerVersion(game.version, 11)
+    const setRestoreOriginalData = foundry.utils.isNewerVersion(game.version, 11)
         ? (drawing, event, value) => event.interactionData.restoreOriginalData = value
         : (drawing, event, value) => { };
-    const refreshShape = isNewerVersion(game.version, 11)
-        ? (drawing) => drawing.renderFlags.set({ refreshShape: true })
-        : (drawing) => drawing.refresh();
+    const refreshSize = foundry.utils.isNewerVersion(game.version, 12)
+        ? (drawing) => drawing.renderFlags.set({ refreshSize: true })
+        : foundry.utils.isNewerVersion(game.version, 11)
+            ? (drawing) => drawing.renderFlags.set({ refreshShape: true })
+            : (drawing) => drawing.refresh();
+    const isDraggingHandle = foundry.utils.isNewerVersion(game.version, 12)
+        ? (drawing, event) => event.interactionData.dragHandle
+        : (drawing, event) => drawing._dragHandle;
 
-    libWrapper.register(MODULE_ID, "Drawing.prototype.activateListeners", function (wrapped, ...args) {
-        wrapped(...args);
+    if (!foundry.utils.isNewerVersion(game.version, 12)) {
+        libWrapper.register(MODULE_ID, "Drawing.prototype.activateListeners", function (wrapped, ...args) {
+            wrapped(...args);
 
-        const pointerup = isNewerVersion(game.version, 11) ? "pointerup" : "mouseup";
+            const pointerup = foundry.utils.isNewerVersion(game.version, 11) ? "pointerup" : "mouseup";
 
-        this.frame.handle.off(pointerup).on(pointerup, this._onHandleMouseUp.bind(this));
-    }, libWrapper.WRAPPER);
+            this.frame.handle.off(pointerup).on(pointerup, this._onHandleMouseUp.bind(this));
+        }, libWrapper.WRAPPER);
+    }
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleHoverIn", function (event) {
         if (this._dragHandle) {
@@ -60,27 +67,29 @@ Hooks.once("libWrapper.Ready", () => {
         }
     }, libWrapper.OVERRIDE);
 
-    libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleMouseDown", function (event) {
-        const handle = event.target;
+    if (!foundry.utils.isNewerVersion(game.version, 12)) {
+        libWrapper.register(MODULE_ID, "Drawing.prototype._onHandleMouseDown", function (event) {
+            const handle = event.target;
 
-        if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
-            if (!this.document.locked) {
-                this._dragHandle = true;
-                handle._hover = true;
-                handle.refresh();
-                this._editHandle = handle;
+            if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
+                if (!this.document.locked) {
+                    this._dragHandle = true;
+                    handle._hover = true;
+                    handle.refresh();
+                    this._editHandle = handle;
+                } else {
+                    this._editHandle = null;
+                }
             } else {
-                this._editHandle = null;
+                if (!this.document.locked) {
+                    this._dragHandle = true;
+                }
             }
-        } else {
-            if (!this.document.locked) {
-                this._dragHandle = true;
-            }
-        }
-    }, libWrapper.OVERRIDE);
+        }, libWrapper.OVERRIDE);
+    }
 
     libWrapper.register(MODULE_ID, "Drawing.prototype._onDragLeftStart", function (wrapped, event) {
-        if (!this._dragHandle) {
+        if (!isDraggingHandle(this, event)) {
             return wrapped(event);
         }
 
@@ -112,7 +121,7 @@ Hooks.once("libWrapper.Ready", () => {
 
         if (update) {
             this.document.updateSource(update);
-            refreshShape(this);
+            refreshSize(this);
         }
     }, libWrapper.MIXED);
 
@@ -125,6 +134,12 @@ Hooks.once("libWrapper.Ready", () => {
 
         const originalEvent = event.data.originalEvent;
         let update;
+
+        if (!originalEvent.shiftKey) {
+            if (foundry.utils.isNewerVersion(game.version, 12)) {
+                destination = this.layer.getSnappedPoint(destination);
+            }
+        }
 
         // Pan the canvas if the drag event approaches the edge
         canvas._onDragCanvasPan(originalEvent);
@@ -157,7 +172,7 @@ Hooks.once("libWrapper.Ready", () => {
 
         try {
             this.document.updateSource(update);
-            refreshShape(this);
+            refreshSize(this);
         } catch (err) { }
     }, libWrapper.OVERRIDE);
 
@@ -174,7 +189,11 @@ Hooks.once("libWrapper.Ready", () => {
         setRestoreOriginalData(this, event, false);
 
         if (!originalEvent.shiftKey) {
-            destination = canvas.grid.getSnappedPosition(destination.x, destination.y, this.layer.gridPrecision);
+            if (foundry.utils.isNewerVersion(game.version, 12)) {
+                destination = this.layer.getSnappedPoint(destination);
+            } else {
+                destination = canvas.grid.getSnappedPosition(destination.x, destination.y, this.layer.gridPrecision);
+            }
         }
 
         if (handle instanceof PointHandle || handle instanceof EdgeHandle) {
@@ -213,6 +232,22 @@ Hooks.once("libWrapper.Ready", () => {
         return this.document.update(update, { diff: false });
     }, libWrapper.OVERRIDE);
 
+    if (foundry.utils.isNewerVersion(game.version, 12)) {
+        libWrapper.register(MODULE_ID, "Drawing.prototype._onClickLeft", function (wrapped, event) {
+            this._editHandle = null;
+
+            if (this._editHandles?.points.children.includes(event.target)
+                || this._editHandles?.edges.children.includes(event.target)) {
+                event.interactionData.dragHandle = true;
+                event.stopPropagation();
+                this._editHandle = event.target;
+                return;
+            }
+
+            return wrapped(event);
+        }, libWrapper.MIXED);
+    }
+
     libWrapper.register(MODULE_ID, "Drawing.prototype._onClickRight", function (wrapped, event) {
         let handle = getInteractionData(event).handle;
 
@@ -221,6 +256,7 @@ Hooks.once("libWrapper.Ready", () => {
         }
 
         if ((handle instanceof PointHandle || handle instanceof EdgeHandle) && handle._hover) {
+            event.stopPropagation();
             this._dragHandle = false;
             handle._hover = false;
             handle.refresh();
@@ -252,12 +288,14 @@ Hooks.once("libWrapper.Ready", () => {
         return wrapped(event);
     }, libWrapper.MIXED);
 
-    Drawing.prototype._onHandleMouseUp = function (event) {
-        if (!getOriginalData(this, event)) {
-            this._dragHandle = false;
-            this._editHandle = null;
-        }
-    };
+    if (!foundry.utils.isNewerVersion(game.version, 12)) {
+        Drawing.prototype._onHandleMouseUp = function (event) {
+            if (!getOriginalData(this, event)) {
+                this._dragHandle = false;
+                this._editHandle = null;
+            }
+        };
+    }
 });
 
 Drawing.prototype._editMode = false;
@@ -287,7 +325,7 @@ Drawing.prototype._editHandles = null;
 Drawing.prototype._refreshEditMode = function () {
     const document = this.document;
 
-    if (this._editMode && this.layer.active && !document._source.locked && document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+    if (this._editMode && this.layer.active && !document._source.locked && document.shape.type === "p") {
         let editHandles = this._editHandles;
 
         if (!editHandles || editHandles.destroyed) {
@@ -296,23 +334,30 @@ Drawing.prototype._refreshEditMode = function () {
             editHandles.points = editHandles.addChild(new PIXI.Container());
         }
 
-        const activateListeners = isNewerVersion(game.version, 11)
+        const activateListeners = foundry.utils.isNewerVersion(game.version, 12)
             ? (handle) => {
-                handle.off("pointerover").off("pointerout").off("pointerdown").off("pointerup")
+                handle.off("pointerover").off("pointerout")
                     .on("pointerover", this._onHandleHoverIn.bind(this))
-                    .on("pointerout", this._onHandleHoverOut.bind(this))
-                    .on("pointerdown", this._onHandleMouseDown.bind(this))
-                    .on("pointerup", this._onHandleMouseUp.bind(this));
+                    .on("pointerout", this._onHandleHoverOut.bind(this));
                 handle.eventMode = "static";
             }
-            : (handle) => {
-                handle.off("mouseover").off("mouseout").off("mousedown").off("mouseup")
-                    .on("mouseover", this._onHandleHoverIn.bind(this))
-                    .on("mouseout", this._onHandleHoverOut.bind(this))
-                    .on("mousedown", this._onHandleMouseDown.bind(this))
-                    .on("mouseup", this._onHandleMouseUp.bind(this));
-                handle.interactive = true;
-            };
+            : foundry.utils.isNewerVersion(game.version, 11)
+                ? (handle) => {
+                    handle.off("pointerover").off("pointerout").off("pointerdown").off("pointerup")
+                        .on("pointerover", this._onHandleHoverIn.bind(this))
+                        .on("pointerout", this._onHandleHoverOut.bind(this))
+                        .on("pointerdown", this._onHandleMouseDown.bind(this))
+                        .on("pointerup", this._onHandleMouseUp.bind(this));
+                    handle.eventMode = "static";
+                }
+                : (handle) => {
+                    handle.off("mouseover").off("mouseout").off("mousedown").off("mouseup")
+                        .on("mouseover", this._onHandleHoverIn.bind(this))
+                        .on("mouseout", this._onHandleHoverOut.bind(this))
+                        .on("mousedown", this._onHandleMouseDown.bind(this))
+                        .on("mouseup", this._onHandleMouseUp.bind(this));
+                    handle.interactive = true;
+                };
 
         const points = document.shape.points;
 

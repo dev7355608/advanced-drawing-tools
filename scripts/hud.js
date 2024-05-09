@@ -25,13 +25,13 @@ Hooks.on("renderDrawingHUD", (hud, html) => {
 
         await drawing._convertToPolygon({ confirm: true });
 
-        if (drawing.document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+        if (drawing.document.shape.type === "p") {
             drawing._toggleEditMode();
             hud.render(true);
         }
     });
 
-    if (hud.object.document.shape.type === CONST.DRAWING_TYPES.POLYGON) {
+    if (hud.object.document.shape.type === "p") {
         const flipH = document.createElement("div");
 
         flipH.classList.add("control-icon");

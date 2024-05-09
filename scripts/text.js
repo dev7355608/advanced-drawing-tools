@@ -3,7 +3,7 @@ import { WarpedText } from "./warped-text.js";
 import { calculateValue } from "./utils.js";
 
 Hooks.once("libWrapper.Ready", () => {
-    if (isNewerVersion(game.version, 11)) {
+    if (foundry.utils.isNewerVersion(game.version, 11)) {
         return;
     }
 
@@ -113,17 +113,30 @@ Hooks.on("refreshDrawing", drawing => {
         wordWrapWidth: calculateValue(ts?.wordWrapWidth, document.shape.width) ?? document.shape.width
     });
 
-    const offset = Math.min(Math.max(document.shape.width - text.width, 0) / 2, document.strokeWidth + document.fontSize / 2);
-
-    if (ts?.align === "left" || ts?.align === "justify") {
-        text.pivot.set(Math.max(text.width, document.shape.width) / 2 - offset, text.height / 2);
-    } else if (ts?.align === "right") {
-        text.pivot.set(text.width - Math.max(text.width, document.shape.width) / 2 + offset, text.height / 2);
+    if (foundry.utils.isNewerVersion(game.version, 12)) {
+        if (ts?.align === "left" || ts?.align === "justify") {
+            text.position.set(0, document.shape.height / 2);
+            text.anchor.set(0, 0.5);
+        } else if (ts?.align === "right") {
+            text.anchor.set(1, 0.5);
+            text.position.set(document.shape.width, document.shape.height / 2);
+        } else {
+            text.anchor.set(0.5, 0.5);
+            text.position.set(document.shape.width / 2, document.shape.height / 2);
+        }
     } else {
-        text.pivot.set(text.width / 2, text.height / 2);
-    }
+        const offset = Math.min(Math.max(document.shape.width - text.width, 0) / 2, document.strokeWidth + document.fontSize / 2);
 
-    text.position.set(document.shape.width / 2, document.shape.height / 2);
+        if (ts?.align === "left" || ts?.align === "justify") {
+            text.pivot.set(Math.max(text.width, document.shape.width) / 2 - offset, text.height / 2);
+        } else if (ts?.align === "right") {
+            text.pivot.set(text.width - Math.max(text.width, document.shape.width) / 2 + offset, text.height / 2);
+        } else {
+            text.pivot.set(text.width / 2, text.height / 2);
+        }
+
+        text.position.set(document.shape.width / 2, document.shape.height / 2);
+    }
 
     const arc = Math.clamped(ts?.arc ? ts.arc / 180 * Math.PI : 0, -2 * Math.PI, +2 * Math.PI);
 
@@ -133,7 +146,7 @@ Hooks.on("refreshDrawing", drawing => {
         }
 
         if (!drawing._warpedText) {
-            drawing._warpedText = drawing.addChildAt(new WarpedText(drawing.text), drawing.getChildIndex(drawing.text) + 1);
+            drawing._warpedText = drawing.addChildAt(new WarpedText(drawing.text), drawing.text.parent.getChildIndex(drawing.text) + 1);
         }
 
         drawing._warpedText.alpha = document.hidden ? Math.min(0.5, document.textAlpha ?? 1) : (document.textAlpha ?? 1);
