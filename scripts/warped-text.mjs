@@ -78,11 +78,10 @@ export class WarpedText extends PIXI.Mesh {
     }
 
     getLocalBounds(rect) {
-        this.updateText(true);
+        this.text.updateText(true);
 
         return super.getLocalBounds(this, rect);
     }
-
 
     destroy(options) {
         this.texture.off("update", this.textureUpdated, this);

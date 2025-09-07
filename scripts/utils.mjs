@@ -1,4 +1,4 @@
-import { DEFAULT_FLAGS, MODULE_ID } from "./const.js";
+import { DEFAULT_FLAGS, MODULE_ID } from "./const.mjs";
 
 export function parseValue(value) {
     if (value == null) {
@@ -113,7 +113,8 @@ export function cleanData(data, { inplace = false, deletionKeys = false, keepOth
         }
 
         const defaultValue = DEFAULT_FLAGS[key];
-        const normalizeValue = value => {
+
+        const normalizeValue = (value) => {
             value = value ?? null;
 
             if (parseValue(defaultValue)) {
